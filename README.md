@@ -1,3 +1,4 @@
 # landscape-analysis-GeoMapDataverseIntegration
 
-TODO reference the analysis document... and other stuff
+- [The Landscape analysis document](./LandscapeAnalysis.md)
+- [Experiments for extending](./experiments/README.md)

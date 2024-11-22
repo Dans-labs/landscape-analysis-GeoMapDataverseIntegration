@@ -1,0 +1,425 @@
+<!-- START of custom footer content -->
+<style>
+        /* NOTE: CSS has been moved to custom-stylesheet.css file */
+</style>
+<div id="custom-footer">
+    <div class="container">
+        <div class="row">
+            <!-- Start of row content -->
+            <div class="col-lg-3 col-md-3 col-sm-6">
+                <div class="h1">Contact and Support</div>
+                <ul class="services">
+                    <li><a href="https://dans.knaw.nl/en/contact/" target="_blank">Contact</a></li>
+                    <li><a href="https://dans.knaw.nl/en/using-data-stations/" target="_blank">Using the Services</a></li>
+                    <li><a href="https://dans.knaw.nl/en/legal-information/" target="_blank">Legal Information</a></li>
+                    <li><a href="https://dans.knaw.nl/en/privacy-declaration/" target="_blank">Privacy</a></li>
+                    <li><a href="https://dans.knaw.nl/en/disclaimer/" target="_blank">Disclaimer</a></li>
+                </ul>
+            </div>
+            <div class="col-lg-3 col-md-3 col-sm-6">
+                <div class="h1">About DANS</div>
+                <ul>
+                    <li><a href="https://dans.knaw.nl/en/about/" target="_blank">Mission</a></li>
+                    <li><a href="https://dans.knaw.nl/en/about/team/" target="_blank">Our Team</a></li>
+                    <li><a href="https://dans.knaw.nl/en/working-for-dans/"  target="_blank">Working for DANS</a></li>
+                </ul>
+            </div>
+            <div class="col-lg-3 col-md-3 col-sm-6">
+                <div class="h1">Follow Us</div>
+                <ul>
+                    <li>
+                        <a href="https://dans.email-provider.eu/memberforms/subscribe/standalone/form/?a=vzl9su9xiv&amp;l=yy3ox9lfh8" target="_blank">
+                                <span class="footer_icons nieuwsbrief">
+                                    <img src="/logos/branding/letter.svg"/>
+                                    Newsletter DataLink
+                                </span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://www.youtube.com/user/DANSDataArchiving" target="_blank">
+                                <span class="footer_icons">
+                                    <img src="/logos/branding/Youtube.svg"/> YouTube
+                                </span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://twitter.com/dans_knaw_nwo" target="_blank">
+                                <span class="footer_icons">
+                                    <img src="/logos/branding/Twitter.svg"/> Twitter
+                                </span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            <div class="col-lg-3 col-md-3 col-sm-6">
+                <div class="headless-column">
+                    <p>DANS is an institute of <br/>
+                        <a href="https://www.knaw.nl/en" target="_blank"><strong>KNAW</strong></a>
+                        and
+                        <a href="https://www.nwo.nl/en" target="_blank"><strong>NWO</strong></a>
+                    </p>
+                </div>
+            </div>
+            <!-- End of row content -->
+        </div>
+    </div>
+</div>
+<!-- Additional custom HTML -->
+<!-- END of custom footer content -->
+
+<!-- Geomap stuff below -->
+<!-- Leaflet -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.8.0/dist/leaflet.css"
+      integrity="sha512-hoalWLoI8r4UszCkZ5kL8vayOGVae1oxXe/2A4AO6J9+580uKHDO3JdHb7NzwwzK5xr/Fs0W40kiNHxM9vyTtQ==" crossorigin=""/>
+<!-- Make sure you put this AFTER Leaflet's CSS -->
+<script src="https://unpkg.com/leaflet@1.8.0/dist/leaflet.js"
+        integrity="sha512-BB3hKbKWOc9Ez/TAwyWxNXeoV9c1v6FIeYiBieIWkpLjauysF18NzgR1MBNBXf8/KABdlkX68nAhlwcDFLGPCQ==" crossorigin=""></script>
+<!-- Clustering-->
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css" />
+<script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
+<style>
+.leaflet-popup-content {
+    font-size: 12px; /* needed to fix this */
+}
+</style>
+<script>
+// checking the version
+let hasJQ = typeof jQuery === 'function'; 
+console.log('jQuery' + (hasJQ ? ` version ${jQuery.fn.jquery} loaded.` : ' is not loaded.')); 
+
+$().ready(function() {
+    console.log('start with geomap stuff');
+    
+    // Find instertion point for the map view div
+    // something in #dv-main before #resultsTable and after #resultsCountPaginatorBlock
+    let viewInsertionBelow = $('#resultsCountPaginatorBlock');
+    // alternative is on the side of the search results, would be logical if that was in sync with the search results
+    //let viewInsertionBelow = $('#facetType'); // here it suggests you can 'filter' somehow!
+
+    // Note that this is not always there on that page
+    if(viewInsertionBelow === undefined || viewInsertionBelow.length === 0) {
+        console.log('No insertion element found');
+        return; // Nothing to insert or attach to!
+    }
+    // We could further restrict display to only specific sub-verses, determined by the url
+
+    // We coud also restrict to certain users when logged in, as Beta tester!
+    // Note however that the name is not guaranteed to be unique 
+    // var userDisplayName = $('#userDisplayInfoTitle').text();
+
+
+    var mapviewDiv = createMapViewDiv();
+    mapviewDiv.css("background-color", "#f5f5f5");
+    mapviewDiv.css("font-size", "14px"); // somehow font is too small
+    mapviewDiv.addClass("border");
+    
+    mapviewDiv.insertAfter(viewInsertionBelow);
+   
+    // Initialize map, with OpenStreetMap centered on the Netherlands but showing most of europe
+    var map = L.map('geomap').setView([51.505, -0.09], 3);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '© OpenStreetMap'
+    }).addTo(map);
+
+    // We use clustering for potential large number of points
+    // It also handles the case where more points are on the same location
+    // https://github.com/Leaflet/Leaflet.markercluster
+    var useClustering = true;
+
+    var markers;
+    if (useClustering) {
+        markers = L.markerClusterGroup();
+        // Note we don't use chunckedloading, but retrieve in batches (pages) would be nice
+        //markers =L.markerClusterGroup({ chunkedLoading: true, chunkProgress: updateProgressBar });
+    } else {
+        markers = L.featureGroup();
+    }
+
+    map.addLayer(markers);
+  
+    var baseUrl = getBaseUrl();
+    // assume first page, should be retrieved from the url
+    var start = 0;
+    var pageSize = 1000; // default listing pagesize in dataverse is 10, but we could use more
+    var num_retrieved = 0;
+    var searchApiUrl = constructSearchApiUrl(baseUrl)
+
+
+    doSearchRequest(searchApiUrl);
+
+    // $("#btnSubmit-searchLocation").click(function(){
+    //     searchApiUrl = constructSearchApiUrl(baseUrl)
+    //     doSearchRequest(searchApiUrl);      
+    // });
+
+    function doSearchRequest(extractionUrl) {
+        $('#spinner-searchLocation').show();
+
+        //var extractionUrl = "https://archaeology.datastations.nl/api/search?q=*&start="+start+"&per_page="+ pageSize+"&subtree=root&type=dataset&metadata_fields=dansTemporalSpatial:*";
+        
+        // Getting EASY specific location metadata from its subverse
+        const t0 = performance.now();
+        $.ajax({url: extractionUrl, 
+            success: function(result){
+                const t1 = performance.now();
+                console.log(`Result of ajax call took ${t1 - t0} milliseconds.`);
+                processSearchResult(result)
+
+                // the next page
+                start = start + pageSize;
+                //$("#btnSubmit-searchLocation").val("Retrieve next "+ pageSize);
+            }, 
+            error: function(xhr, status, error) {
+                console.log("Error: " + error);
+            },
+            complete: function () {
+                $('#spinner-searchLocation').hide();
+            }
+        });
+    }
+
+    function processSearchResult(result) {
+        console.log('Total of ' + result.data.total_count + " datasets found");
+
+        extractedFeatures = extractFeatures(result);
+        num_retrieved += extractedFeatures.length;
+        console.log('Number of features: ' + extractedFeatures.length);
+
+        var markerList = [];
+
+        // Update the map; add the markers corresponding to the features
+        // assume points only for now, boundingboxes(rectangles) shoudl be done later
+        for (feature of extractedFeatures) {
+            // append to leaflet map
+            lon = feature.geometry.coordinates[0];
+            lat = feature.geometry.coordinates[1];
+            //var marker = L.marker([lat,lon]).addTo(map);
+            var marker = L.marker([lat, lon]);
+
+            // note that we do not want the DOI url; instead  a direct url to prevent extra redirect like; 
+            // https://archaeology.datastations.nl/dataset.xhtml?persistentId=doi:10.17026/dans-x4d-b746
+            var dataset_url = baseUrl + '/dataset.xhtml?persistentId=' + feature.properties.id;//feature.properties.url;
+            // open in new window when not embedded
+            //marker.bindPopup('<a href="' + dataset_url + '"' + ' target="_blank"' + '>' + feature.properties.name + '</a><br>' + feature.properties.id);
+            // change current window
+            marker.bindPopup('<a href="' + dataset_url + '"' + '>' + feature.properties.name + '</a><br>' + feature.properties.id);
+
+            //markers.addLayer(marker);
+            markerList.push(marker);
+        }
+        markers.addLayers(markerList);
+
+        // zoom to extend; show all markers but zoomed in as much as possible
+        map.fitBounds(markers.getBounds());
+
+        // update controls for download
+        $("#result-totals").html(" Retrieved " + num_retrieved + " with a point location"+ " (total number of datasets: " + result.data.total_count + ")");
+        //if (num_retrieved > 0) $("#btnSubmit-searchLocation").prop('disabled', false);
+    }
+
+    function getBaseUrl() {
+        console.log('Protocol: ' + window.location.protocol);
+        console.log('Port: ' + window.location.port);
+        console.log('Host: ' + window.location.hostname);
+        console.log('Path: ' + window.location.pathname);
+
+        // construct baseurl
+        var baseUrl = window.location.protocol + '//' + window.location.hostname;
+        baseUrl += window.location.port.length > 0 ? ':' + window.location.port : '';
+        //baseUrl += window.location.pathname; // do not add the path
+
+        console.log('Base URL: ' + baseUrl);
+
+        return baseUrl;
+    }
+
+    // Construct search API URL from parts, with query params, paging params etc. etc.
+    function constructSearchApiUrl(baseUrl) {
+        // get the current url
+        let url = window.location.href;
+        console.log('URL: ' + url);
+        // get the search part
+        let search = window.location.search;
+        console.log('Search: ' + search);
+        // get the query params
+        let params = new URLSearchParams(search);
+        console.log('Params: ' + params);
+
+        var q = '*'; // make sure we have a query, default is '*'
+        if (params.has('q') && params.get('q').length > 0) {
+            q = params.get('q');
+        }
+
+        // TODO: extract and reuse any fq params to filter on
+        //var fq0 = params.get('fq0');
+
+        // TODO: extract and reuse any sort params to sort on
+
+        var apiUrl = baseUrl + '/api/search' + '?' + 'q=' + q;
+        apiUrl += '&type=dataset'; // only datsets when trying to get all datasets
+        // But if we want to sync with the current search paging we should uset files and verses if specified
+        //var type = params.get('type'); // and the Dataverse default value
+
+        // assume first page of root verse, should be retrieved from the url
+        //var start = 0;
+        //var pageSize = 10; // default pagesize in dataverse is 10, but we could use more
+        var subtree = 'root';
+        apiUrl += "&start=" + start + "&per_page=" + pageSize + "&subtree=" + subtree;
+
+        // add params specific for archaeology custom metadata
+        apiUrl += '&metadata_fields=dansTemporalSpatial:*';
+
+        console.log('New URL: ' + apiUrl);
+
+        return apiUrl;
+    }
+
+});
+
+
+// construct the html elements for the mapview
+// note that we fixed the height of the map to 320px
+function createMapViewDiv() {
+    var mapviewDiv = $('<div id="mapview"></div>');
+
+    var controls = $('<p>Geographic location of datasets: </p>');
+    controls.append('<span id="result-totals"></span>');
+    //controls.append('<input id="btnSubmit-searchLocation" type="submit" value="Start Retrieving" />');
+
+    var spinner = $('<span id="spinner-searchLocation" style="display:none;"></span>');
+    spinner.append('<span class="spinner-border" role="status" style="width: 1.2rem; height: 1.2rem;" ><span class="sr-only">Loading...</span></span>');
+
+    controls.append(spinner);
+    controls.append('<div id="progress"><div id="progress-bar"></div></div>');
+
+    mapviewDiv.append(controls);
+    mapviewDiv.append('<div id="geomap" style="height:320px;"></div>');
+
+    return mapviewDiv;
+}
+
+
+/**
+ * Assumes to get a JSON search result from the Dataverse API
+ * and this is from the archaeology data station with the dansTemporalSpatial metadata block
+ */
+const extractFeatures = (result) => {
+    const t0 = performance.now();
+    var resultFeatureArr = [];
+
+    console.log('Total of items in this page: ' + result.data.items.length);
+
+    $.each(result.data.items, function (key, value) {
+        console.log('Processing item: ' + value.name);
+        if (typeof value.metadataBlocks !== "undefined" &&
+            typeof value.metadataBlocks.dansTemporalSpatial !== "undefined") {
+            dansSpatialPoint = value.metadataBlocks.dansTemporalSpatial.fields.find(x => x.typeName === "dansSpatialPoint");
+            let title = "<span><a href='" + value.url + "' target='_blank'>" + value.name + "</a></span>";
+            let location = ""; //nothing
+            // Only points for now!
+            if (typeof dansSpatialPoint !== "undefined") {
+                dansSpatialPointX = dansSpatialPoint.value[0]["dansSpatialPointX"].value
+                dansSpatialPointY = dansSpatialPoint.value[0]["dansSpatialPointY"].value
+                // calculate lat, lon in WGS84, assuming new RD in m.
+                // TODO check the schema of the dansSpatialPointX and dansSpatialPointY
+                latLon = convert(parseFloat(dansSpatialPointX), parseFloat(dansSpatialPointY))
+                lat = latLon.lat;
+                lon = latLon.lon;
+                // The next could be use to show the location in a popup somewhere else
+                //location = "<span><a href='http://maps.google.com/maps?z=18&q="+ lat + "," + lon + "' target='_blank'>" + lat  + ", " + lon + "</a></span>";
+
+                // add to the features; geojson format so we can export it later
+                const feature = {
+                    "type": "Feature",
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": [lon, lat]
+                    },
+                    "properties": {
+                        "name": value.name,
+                        "url": value.url, // note that this is the doi url, with a redirect to the actual dataset, it is persisten so wanted in a json file
+                        "id": value.global_id
+                    }
+                }
+                console.log(feature);
+                resultFeatureArr.push(feature);
+            }
+        }
+    });
+    const t1 = performance.now();
+    console.log(`Call to extractFeatures took ${t1 - t0} milliseconds.`);
+    return resultFeatureArr;
+}
+
+/** Note that I copied this next convert function from somewhere on the web, 
+ * ignoring any errors and not having it validated in any way 
+ * copy from https://github.com/glenndehaan/rd-to-wgs84/blob/master/src/index.js
+ */
+/**
+ * Converts the Dutch 'RD' RijksDriehoek coordinate system to standard WGS84 (GPS) coordinates
+ *
+ * @param x
+ * @param y
+ * @return 
+ */
+ const convert = (x, y) => {
+    const x0 = 155000.000;
+    const y0 = 463000.000;
+
+    const f0 = 52.156160556;
+    const l0 = 5.387638889;
+
+    const a01 = 3236.0331637;
+    const b10 = 5261.3028966;
+    const a20 = -32.5915821;
+    const b11 = 105.9780241;
+    const a02 = -0.2472814;
+    const b12 = 2.4576469;
+    const a21 = -0.8501341;
+    const b30 = -0.8192156;
+    const a03 = -0.0655238;
+    const b31 = -0.0560092;
+    const a22 = -0.0171137;
+    const b13 = 0.0560089;
+    const a40 = 0.0052771;
+    const b32 = -0.0025614;
+    const a23 = -0.0003859;
+    const b14 = 0.0012770;
+    const a41 = 0.0003314;
+    const b50 = 0.0002574;
+    const a04 = 0.0000371;
+    const b33 = -0.0000973;
+    const a42 = 0.0000143;
+    const b51 = 0.0000293;
+    const a24 = -0.0000090;
+    const b15 = 0.0000291;
+
+    const dx = (x - x0) * Math.pow(10, -5);
+    const dy = (y - y0) * Math.pow(10, -5);
+
+    // Note that we could precalulate some pow values, like dx_2, dx_3 etc. !
+
+    let df = a01 * dy + a20 * Math.pow(dx, 2) + a02 * Math.pow(dy, 2) + a21 * Math.pow(dx, 2) * dy + a03 * Math.pow(dy, 3);
+    df += a40 * Math.pow(dx, 4) + a22 * Math.pow(dx, 2) * Math.pow(dy, 2) + a04 * Math.pow(dy, 4) + a41 * Math.pow(dx, 4) * dy;
+    df += a23 * Math.pow(dx, 2) * Math.pow(dy, 3) + a42 * Math.pow(dx, 4) * Math.pow(dy, 2) + a24 * Math.pow(dx, 2) * Math.pow(dy, 4);
+
+    const f = f0 + df / 3600;
+
+    let dl = b10 * dx + b11 * dx * dy + b30 * Math.pow(dx, 3) + b12 * dx * Math.pow(dy, 2) + b31 * Math.pow(dx, 3) * dy;
+    dl += b13 * dx * Math.pow(dy, 3) + b50 * Math.pow(dx, 5) + b32 * Math.pow(dx, 3) * Math.pow(dy, 2) + b14 * dx * Math.pow(dy, 4);
+    dl += b51 * Math.pow(dx, 5) * dy + b33 * Math.pow(dx, 3) * Math.pow(dy, 3) + b15 * dx * Math.pow(dy, 5);
+
+    const l = l0 + dl / 3600;
+
+    const fWgs = f + (-96.862 - 11.714 * (f - 52) - 0.125 * (l - 5)) / 100000;
+    const lWgs = l + (-37.902 + 0.329 * (f - 52) - 14.667 * (l - 5)) / 100000;
+
+    return {
+        error: null,
+        lat: fWgs,
+        lon: lWgs
+    }
+};
+</script>
