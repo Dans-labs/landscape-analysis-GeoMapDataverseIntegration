@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html>
+    <head>
+
+    </head>
+    <body>
+        <h1>Map view example</h1>
+
+        <div id="mapviewContainer"></div>
+
+        <!-- <div id="mapview">
+          <p>
+            <span id="result-totals"></span> 
+            <input id="btnRetrieve" type="submit" value="Start Retrieving" />
+            <span id="spinner-searchLocation" style="display:none;">
+              <span class="spinner-border" role="status" style="width: 1.2rem; height: 1.2rem;" >
+                <span class="sr-only">Loading...</span>
+              </span>
+            </span>
+            <div id="progress"><div id="progress-bar"></div></div>
+          </p>
+          <div id="map" style="height:320px;"></div>
+      </div> -->
+
+
+    </body>
+      
+<!-- jQuery -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+
+<!-- bootstrap -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css" integrity="sha384-xOolHFLEh07PJGoPkLv1IbcEPTNtaed2xpHsD9ESMhqIYd0nLMwNLD69Npy4HI+N" crossorigin="anonymous">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-Fy6S3B9q64WdZWQUiU+q4/2Lc9npb8tCaSX9FK7E8HnRr0Jz8D6OP9dO5Vg3Q9ct" crossorigin="anonymous"></script>
+
+<!-- Leaflet -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.8.0/dist/leaflet.css"
+      integrity="sha512-hoalWLoI8r4UszCkZ5kL8vayOGVae1oxXe/2A4AO6J9+580uKHDO3JdHb7NzwwzK5xr/Fs0W40kiNHxM9vyTtQ==" crossorigin=""/>
+<!-- Make sure you put this AFTER Leaflet's CSS -->
+<script src="https://unpkg.com/leaflet@1.8.0/dist/leaflet.js"
+        integrity="sha512-BB3hKbKWOc9Ez/TAwyWxNXeoV9c1v6FIeYiBieIWkpLjauysF18NzgR1MBNBXf8/KABdlkX68nAhlwcDFLGPCQ==" crossorigin=""></script>
+
+<!-- clustereing-->
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css" />
+<script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
+
+<script>
+// checking the version
+let hasJQ = typeof jQuery === 'function'; 
+console.log('jQuery' + (hasJQ ? ` version ${jQuery.fn.jquery} loaded.` : ' is not loaded.')); 
+
+// construct the html elements for the mapview
+function createMapViewDiv() {
+  var mapviewDiv=$('<div id="mapview"></div>');
+  var controls = $('<p></p>');
+  controls.append('<span id="result-totals"></span>');
+  var button = $('<button class="btn btn-primary ml-1" type="button" id="btnRetrieve"><span id="btnRetrieveMsg">Start Retrieving<span></button>');
+  //controls.append('<input id="btnRetrieve" type="submit" value="Start Retrieving" />');
+  var spinner = $('<span id="spinner-searchLocation" style="display:none;"></span>');
+  //spinner.append('<span class="spinner-border spinner-border-sm  ml-1" role="status" aria-hidden="true" style="width: 1.2rem; height: 1.2rem;" ><span class="sr-only">Loading...</span></span>');
+  spinner.append('<span class="spinner-border spinner-border-sm  ml-1" role="status" aria-hidden="true" ><span class="sr-only">Loading...</span></span>');
+  button.append(spinner);
+  controls.append(button);
+  //controls.append('<div id="progress"><div id="progress-bar"></div></div>');
+  mapviewDiv.append(controls);
+  mapviewDiv.append('<div id="map" style="height:320px;"></div>');
+
+  // Not working, map does not resize with it, need to force a map.invalidateSize();
+  // https://stackoverflow.com/questions/24412325/resizing-a-leaflet-map-on-container-resize
+  //mapviewDiv.css('resize', 'vertical');
+  //mapviewDiv.css('overflow', 'auto');
+
+  return mapviewDiv;
+}
+
+$("#mapviewContainer").append(createMapViewDiv());
+
+$().ready(function() {
+  //$("#text").html("Text added by jQuery code.");
+
+  // for chunked loading...
+  // var progress = document.getElementById('progress');
+	// var progressBar = document.getElementById('progress-bar');
+
+  // function updateProgressBar(processed, total, elapsed, layersArray) {
+  //   if (elapsed > 1000) {
+  //     // if it takes more than a second to load, display the progress bar:
+  //     progress.style.display = 'block';
+  //     progressBar.style.width = Math.round(processed/total*100) + '%';
+  //   }
+
+  //   if (processed === total) {
+  //     // all markers processed - hide the progress bar:
+  //     progress.style.display = 'none';
+  //   }
+  // }
+
+  // Initialize map
+  var map = L.map('map').setView([51.505, -0.09], 3);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '© OpenStreetMap'
+  }).addTo(map);
+
+  // use clustering for potential large number of points
+  // https://github.com/Leaflet/Leaflet.markercluster
+  var useClustering = true;
+
+  var markers;
+  if (useClustering) {
+
+    markers = L.markerClusterGroup();
+    //markers =L.markerClusterGroup({ chunkedLoading: true, chunkProgress: updateProgressBar });
+  } else {
+    markers = L.featureGroup();
+  }
+
+  map.addLayer(markers);
+
+  // The guide for the search API: https://guides.dataverse.org/en/latest/api/search.html
+  // Note that we doing a sort of chunked loading, with pages of less than 1000 items but still on a button click to get next page
+  // Should automate more, like getting more pages up to max of 40000 items for instance
+  let pageSize = 1; // max 1000, for Dataverse API
+  var start = 0;
+  var num_features_retrieved = 0;
+  var num_results_total = 0;
+  var num_results_retrieved = 0;
+
+  // Note see: https://easy.dans.knaw.nl/ui/resources/nl.knaw.dans.libs.map.MapViewerPanel/MapViewer.js
+
+  var baseUrl = "https://dev.archaeology.datastations.nl"; // https://archaeology.datastations.nl
+  var q = '*'; // search for all is * in the query
+  //var extractionUrl = baseUrl + "/api/search?q="+ q +"&start="+start+"&per_page="+ pageSize+"&subtree=root&type=dataset&metadata_fields=dansTemporalSpatial:*";
+
+
+  doSearchRequest(constructSearchApiUrl(baseUrl)); // start the search (first page of results) at loading the page
+
+  $("#btnRetrieve").click(function(){
+    doSearchRequest(constructSearchApiUrl(baseUrl));
+  });
+
+  // Construct search API URL from parts, with query params, paging params etc. etc.
+  function constructSearchApiUrl(baseUrl) { 
+    return baseUrl + "/api/search?q="+ q +"&start="+start+"&per_page="+ pageSize+"&subtree=root&type=dataset&metadata_fields=dansTemporalSpatial:*";
+  }
+ 
+
+  /** example query
+   * curl "https://archaeology.datastations.nl/api/search?q=*&type=dataset&metadata_fields=dansTemporalSpatial:*" | jq
+   */
+  function doSearchRequest(extractionUrl) {
+    $("#btnRetrieve").prop('disabled', true);
+    $('#spinner-searchLocation').show();
+
+    // TODO construct URL from parts, with query params, paging params etc. etc.
+    //var extractionUrl = baseUrl + "/api/search?q=*&start="+start+"&per_page="+ pageSize+"&subtree=root&type=dataset&metadata_fields=dansTemporalSpatial:*";
+    
+    // Getting EASY specific location metadata from its subverse
+    const t0 = performance.now();
+    $.ajax({url: extractionUrl, 
+      success: function(result){
+        const t1 = performance.now();
+        console.log(`Result of ajax call took ${t1 - t0} milliseconds.`);
+
+        num_results_total = result.data.total_count; // could change, but unlikely
+
+        processSearchResult(result)
+
+        num_results_retrieved += result.data.items.length;
+        console.log("Retrieved " + num_results_retrieved + " datasets of total " + num_results_total);
+      }, 
+      error: function(xhr, status, error) {
+        console.log("Error: " + error);
+      },
+      complete: function () {
+          $('#spinner-searchLocation').hide();
+          if (num_results_retrieved < num_results_total) {
+          // advance to the next page
+          start = start + pageSize;
+          $("#btnRetrieve").prop('disabled', false);
+          $("#btnRetrieveMsg").text("Retrieve next " + pageSize);
+        } else {
+          $("#btnRetrieve").prop('disabled', true);
+          $("#btnRetrieveMsg").text("All datasets retrieved");
+        }
+      }
+    }); 
+  }
+
+  function processSearchResult(result) {
+    let extractedFeatures = extractFeatures(result);
+      num_features_retrieved += extractedFeatures.length;
+
+      var markerList = [];
+
+      // update the map; add the markers corresponding to the features
+      // assume points only for now
+      for (feature of extractedFeatures) {
+          // append to leaflet map
+          lon = feature.geometry.coordinates[0];
+          lat = feature.geometry.coordinates[1];
+          //var marker = L.marker([lat,lon]).addTo(map);
+          var marker = L.marker([lat,lon]);
+
+          // note that the url now is the doi, we might want a direct url to prevent extra redirect like; 
+          // https://archaeology.datastations.nl/dataset.xhtml?persistentId=doi:10.17026/dans-x4d-b746
+          var dataset_url = baseUrl + '/dataset.xhtml?persistentId='+ feature.properties.id;//feature.properties.url;
+          // open in new window
+          //marker.bindPopup('<a href="' + dataset_url + '"' + ' target="_blank"' + '>' + feature.properties.name + '</a><br>' + feature.properties.id);
+          // change current window
+          marker.bindPopup('<a href="' + dataset_url + '"' + '>' + feature.properties.name + '</a><br>' + feature.properties.id);
+
+          //markers.addLayer(marker);
+          markerList.push(marker);
+      }
+      markers.addLayers(markerList);
+
+      // zoom to extend; show all markers but zoomed in as much as possible
+      map.fitBounds(markers.getBounds());
+
+      // update controls for download
+      $("#result-totals").html(" Retrieved " + num_features_retrieved + " with a point location"+ " (total number of datasets: " + result.data.total_count + ")");
+      //if (num_features_retrieved > 0) $("#downloadBtn").prop('disabled', false);
+  }
+
+  // Optional could allow for downloading the geojson
+  // function downloadGeoJson() {
+  //   // download the geojson file
+  //   var geojson = {
+  //     "type": "FeatureCollection",
+  //     "features": extractedFeatures
+  //   }
+  //   var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(geojson));
+  //   var downloadAnchorNode = document.createElement('a');
+  //   downloadAnchorNode.setAttribute("href",     dataStr);
+  //   downloadAnchorNode.setAttribute("download", "data.geojson");
+  //   document.body.appendChild(downloadAnchorNode); // required for firefox
+  //   downloadAnchorNode.click();
+  //   downloadAnchorNode.remove();
+  // }
+});
+
+/** The next functions could be part of a sort of configuration, specific for the Archaeology datastation 
+ * It has all datasets in the root verse, and the metadata block dansTemporalSpatial has the RD coordinates.
+ */
+
+/**
+ * Assumes to get a JSON search result from the Dataverse API
+ * and this is from the archaeology data station with the dansTemporalSpatial metadata block
+ */
+const extractFeatures = (result) => {
+  const t0 = performance.now();
+  var resultFeatureArr = [];
+
+  console.log(result.data.total_count + " datasets found");
+
+  $.each(result.data.items, function(key, value) {
+    if (typeof value.metadataBlocks.dansTemporalSpatial !== "undefined") {
+      dansSpatialPoint = value.metadataBlocks.dansTemporalSpatial.fields.find(x => x.typeName === "dansSpatialPoint");
+      let title = "<span><a href='" + value.url+ "' target='_blank'>" + value.name + "</a></span>";
+      let location = ""; //nothing
+      // Only points for now!
+      if (typeof dansSpatialPoint !== "undefined") {
+        dansSpatialPointX = dansSpatialPoint.value[0]["dansSpatialPointX"].value
+        dansSpatialPointY = dansSpatialPoint.value[0]["dansSpatialPointY"].value
+        // calculate lat, lon in WGS84, assuming new RD in m.
+        // copy from https://github.com/glenndehaan/rd-to-wgs84/blob/master/src/index.js
+        latLon = convert( parseFloat(dansSpatialPointX),  parseFloat(dansSpatialPointY))
+        lat = latLon.lat;
+        lon = latLon.lon;
+        // The next could be use to show the location in a popup somewhere else
+        //location = "<span><a href='http://maps.google.com/maps?z=18&q="+ lat + "," + lon + "' target='_blank'>" + lat  + ", " + lon + "</a></span>";
+        
+        // add to the features; geojson format
+        const feature = {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [lon, lat]
+            },
+            "properties": {
+                "name": value.name,
+                "url": value.url, // note that this is the doi url, with a redirect to the actual dataset, it is persisten so wanted in a json file
+                "id": value.global_id
+            }
+        }
+        //console.log(feature);
+        resultFeatureArr.push(feature);
+      }
+    }
+  });
+  const t1 = performance.now();
+  console.log(`Call to extractFeatures took ${t1 - t0} milliseconds.`);
+  return resultFeatureArr;
+}
+
+/** Note that I copied this next convert function from somewhere on the web, 
+ * ignoring any errors and not having it validated in any way 
+ */
+/**
+ * Converts the Dutch 'RD' RijksDriehoek coordinate system to standard WGS84 (GPS) coordinates
+ *
+ * @param x
+ * @param y
+ * @return 
+ */
+ const convert = (x, y) => {
+    const x0 = 155000.000;
+    const y0 = 463000.000;
+
+    const f0 = 52.156160556;
+    const l0 = 5.387638889;
+
+    const a01 = 3236.0331637;
+    const b10 = 5261.3028966;
+    const a20 = -32.5915821;
+    const b11 = 105.9780241;
+    const a02 = -0.2472814;
+    const b12 = 2.4576469;
+    const a21 = -0.8501341;
+    const b30 = -0.8192156;
+    const a03 = -0.0655238;
+    const b31 = -0.0560092;
+    const a22 = -0.0171137;
+    const b13 = 0.0560089;
+    const a40 = 0.0052771;
+    const b32 = -0.0025614;
+    const a23 = -0.0003859;
+    const b14 = 0.0012770;
+    const a41 = 0.0003314;
+    const b50 = 0.0002574;
+    const a04 = 0.0000371;
+    const b33 = -0.0000973;
+    const a42 = 0.0000143;
+    const b51 = 0.0000293;
+    const a24 = -0.0000090;
+    const b15 = 0.0000291;
+
+    const dx = (x - x0) * Math.pow(10, -5);
+    const dy = (y - y0) * Math.pow(10, -5);
+
+    // Note that we could precalulate some pow values, like dx_2, dx_3 etc. !
+
+    let df = a01 * dy + a20 * Math.pow(dx, 2) + a02 * Math.pow(dy, 2) + a21 * Math.pow(dx, 2) * dy + a03 * Math.pow(dy, 3);
+    df += a40 * Math.pow(dx, 4) + a22 * Math.pow(dx, 2) * Math.pow(dy, 2) + a04 * Math.pow(dy, 4) + a41 * Math.pow(dx, 4) * dy;
+    df += a23 * Math.pow(dx, 2) * Math.pow(dy, 3) + a42 * Math.pow(dx, 4) * Math.pow(dy, 2) + a24 * Math.pow(dx, 2) * Math.pow(dy, 4);
+
+    const f = f0 + df / 3600;
+
+    let dl = b10 * dx + b11 * dx * dy + b30 * Math.pow(dx, 3) + b12 * dx * Math.pow(dy, 2) + b31 * Math.pow(dx, 3) * dy;
+    dl += b13 * dx * Math.pow(dy, 3) + b50 * Math.pow(dx, 5) + b32 * Math.pow(dx, 3) * Math.pow(dy, 2) + b14 * dx * Math.pow(dy, 4);
+    dl += b51 * Math.pow(dx, 5) * dy + b33 * Math.pow(dx, 3) * Math.pow(dy, 3) + b15 * dx * Math.pow(dy, 5);
+
+    const l = l0 + dl / 3600;
+
+    const fWgs = f + (-96.862 - 11.714 * (f - 52) - 0.125 * (l - 5)) / 100000;
+    const lWgs = l + (-37.902 + 0.329 * (f - 52) - 14.667 * (l - 5)) / 100000;
+
+    return {
+        error: null,
+        lat: fWgs,
+        lon: lWgs
+    }
+};
+
+    </script>
+</html>
