@@ -91,7 +91,7 @@ console.log('jQuery' + (hasJQ ? ` version ${jQuery.fn.jquery} loaded.` : ' is no
 $().ready(function() {
     console.log('start with geomap stuff');
     
-    // Find instertion point for the map view div
+    // Find insertion point for the map view div
     // something in #dv-main before #resultsTable and after #resultsCountPaginatorBlock
     let viewInsertionBelow = $('#resultsCountPaginatorBlock');
     // alternative is on the side of the search results, would be logical if that was in sync with the search results
@@ -147,7 +147,8 @@ $().ready(function() {
     map.addLayer(markers);
   
     var baseUrl = getBaseUrl();
-    // assume first page, should be retrieved from the url
+    // assume first page, should be retrieved from the url, 
+    // or we just always try to retrieve all results up to a certain limit (1000 for now?)
     var start = 0;
     var pageSize = 1000; // default listing pagesize in dataverse is 10, but we could use more
     var num_retrieved = 0;
@@ -243,6 +244,7 @@ $().ready(function() {
     }
 
     // Construct search API URL from parts, with query params, paging params etc. etc.
+    // Note that in the new frontend SPA the URL could be different and not Solr like... so this should be adapted
     function constructSearchApiUrl(baseUrl) {
         // get the current url
         let url = window.location.href;
@@ -254,13 +256,26 @@ $().ready(function() {
         let params = new URLSearchParams(search);
         console.log('Params: ' + params);
 
-        var q = '*'; // make sure we have a query, default is '*'
+        // Extract and reuse any fq (filter queries) params to filter on       
+        // construct new params object for filter queries
+        var newParams = new URLSearchParams();
+        // first just add all fq params, copy action
+        params.getAll('fq').forEach(fq => newParams.append('fq', fq));
+        // get fq0, fq1 etc. (from facet selection) from the params and add to the search query
+        for (let i = 0; i <= 9; i++) {
+            if (params.has(`fq${i}`)) {
+                // map to fq without number, API only can handle that one
+                newParams.append('fq', params.get(`fq${i}`));
+            }
+        }
+        console.log('New params: '+ newParams);
+
+        // TODO: use newParams instead of string concatenation below
+
+        var q = '*'; // make sure we have a query, default is '*', API needs it
         if (params.has('q') && params.get('q').length > 0) {
             q = params.get('q');
         }
-
-        // TODO: extract and reuse any fq params to filter on
-        //var fq0 = params.get('fq0');
 
         // TODO: extract and reuse any sort params to sort on
 
@@ -268,6 +283,9 @@ $().ready(function() {
         apiUrl += '&type=dataset'; // only datsets when trying to get all datasets
         // But if we want to sync with the current search paging we should uset files and verses if specified
         //var type = params.get('type'); // and the Dataverse default value
+
+        // add the new params to the url
+        apiUrl += '&' + newParams.toString();
 
         // assume first page of root verse, should be retrieved from the url
         //var start = 0;
@@ -350,7 +368,7 @@ const extractFeatures = (result) => {
                         "id": value.global_id
                     }
                 }
-                console.log(feature);
+                //console.log(feature);
                 resultFeatureArr.push(feature);
             }
         }
