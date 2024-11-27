@@ -104,10 +104,17 @@ $().ready(function() {
     }
     // We could further restrict display to only specific sub-verses, determined by the url
 
-    // We coud also restrict to certain users when logged in, as Beta tester!
+    // We could also restrict to certain users when logged in, as Beta tester!
     // Note however that the name is not guaranteed to be unique 
     // var userDisplayName = $('#userDisplayInfoTitle').text();
 
+    // TODO: give selection (button or tabview) to switch between map and list view
+    // default is the list view
+    // when map is selected we need to store it in a session (sessionStorage)
+    //  or localstorage
+    // and retrieve it when the page is reloaded, 
+    // otherwise we would need to select map after every reload/search query change
+    // bootstrap nav-tabs or nav-pills could be used for this
 
     var mapviewDiv = createMapViewDiv();
     mapviewDiv.css("background-color", "#f5f5f5");

@@ -3,7 +3,7 @@ Adding a geospatial map of dataset search result to Dataverse
 *A 'landscape' analysis*
 ========================
 
-Version 0.2 - Concept/Draft, November 2024. 
+Version 0.3 - Concept/Draft, November 2024. 
 
 
 Introduction
@@ -20,7 +20,9 @@ Dataverse can do some things with geospatial information:
 
 - Preview of files (geojson for example) in a dataset. 
 - The search API allows for searching using geospatial parameters (see [this guide][guides-geospatial-search]). However this seems to be confined to the indexing of the custom `Geospatial Metadata` block in Solr, which is 'hardcoded' and assumes WGS84 coordinates. 
+  
   **TODO:** Get Confirmation!
+
   Note that it is not displayed on a map in Dataverse. 
   Also note that the DANS Archaeology DataStation is not using that custom block, but one of our own instead (see Appendix). 
 
@@ -49,9 +51,10 @@ Important aspects:
 - The backend is kept, but the API will extended to support the new frontend. 
 - The frontend is done with the React framework. 
 
-It is uncertain when it will be in a state that DANS is able to have it replace the 'old' frontend. 
+Information about the roadmap can be found [here][dataverse-frontend-roadmap]. 
+It seems to be stuck at 'Q2 2024' and also the [sprint][ataverse-frontend-sprint] does not show much activity. 
 
-**TODO:** refer to roadmap
+It is uncertain when it will be in a state that DANS is able to have it replace the 'old' frontend. 
 
 
 
@@ -144,6 +147,7 @@ At DANS this might not be a big problem, in our Archaeology archive almost all d
 References
 ----------
 
+
 - [https://github.com/IQSS/dataverse-frontend][dataverse-frontend-code]
 
 [dataverse-frontend-code]: <https://github.com/IQSS/dataverse-frontend> "Github repo for the Datverse frontend SPA code"
@@ -153,6 +157,17 @@ References
 [dataverse-frontend-demo]: <https://beta.dataverse.org/spa/collections> " "
 
 - [https://www.primefaces.org/showcase-ext/sections/osmap/markerUsage.jsf][primefaces-osmap]
+
+
+[dataverse-frontend-roadmap]: <https://github.com/IQSS/dataverse-frontend?tab=readme-ov-file#roadmap>
+
+- [https://github.com/IQSS/dataverse-frontend?tab=readme-ov-file#roadmap][dataverse-frontend-roadmap]
+
+
+[dataverse-frontend-sprint]: <https://github.com/orgs/IQSS/projects/34/views/36>
+
+- [https://github.com/orgs/IQSS/projects/34/views/36][dataverse-frontend-sprint]
+
 
 [primefaces-osmap]: <https://www.primefaces.org/showcase-ext/sections/osmap/markerUsage.jsf> "Primefaces map"
 

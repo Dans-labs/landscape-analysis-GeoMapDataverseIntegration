@@ -24,10 +24,8 @@ When you edit that custom footer file in the `shared` director just a browser pa
 ## Separate 'view page', which could be embedded via an iframe
 
 A stand-alone html file. 
-At this point just hardcoded to get search results from the Archaeology production Datastation. 
+At this point just hardcoded to get search results from the Archaeology production Datastation or the dev VM. 
 Also no code that is looking ino it's 'parent' URL from the iframe point of view.  
 
-**TODO:** add that file
-
-
+The [stand alone mapview html file](./experiments/mapview.html).
 
