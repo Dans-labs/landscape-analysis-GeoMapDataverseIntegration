@@ -446,7 +446,9 @@ function createMapViewDiv() {
     //controls.append('<input id="btnSubmit-searchLocation" type="submit" value="Start Retrieving" />');
 
     var spinner = $('<span id="spinner-searchLocation" style="display:none;"></span>');
-    spinner.append('<span class="spinner-border" role="status" style="width: 1.2rem; height: 1.2rem;" ><span class="sr-only">Loading...</span></span>');
+    //spinner.append('<span class="spinner-border" role="status" style="width: 1.2rem; height: 1.2rem;" ><span class="sr-only">Loading...</span></span>');
+    // Note that we use a resource from the dataverse web application
+    spinner.append('<span>Loading...</span><img src="/resources/images/ajax-loading.gif" style="width: 1.2em; height: 1.2em;" />');
 
     controls.append(spinner);
     controls.append('<div id="progress"><div id="progress-bar"></div></div>');
