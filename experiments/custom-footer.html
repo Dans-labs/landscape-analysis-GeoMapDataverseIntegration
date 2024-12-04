@@ -178,11 +178,13 @@ $().ready(function() {
             console.log('Map tab selected');
             $('#mapview').show(); 
             $("#resultsTable").hide();
+            $(".results-sort-pagination.results-bottom").hide();
         } else {
             // do list stuff
             console.log('List tab selected');
             $('#mapview').hide();
             $("#resultsTable").show();
+            $(".results-sort-pagination.results-bottom").show();
         }
     }  
 
