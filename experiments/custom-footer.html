@@ -116,13 +116,87 @@ $().ready(function() {
     // otherwise we would need to select map after every reload/search query change
     // bootstrap nav-tabs or nav-pills could be used for this
 
+
+    // --- tab stuff
+    var tabSelection = createTabSelection();
+    tabSelection.insertBefore(viewInsertionBelow);
+    //tabSelection.insertAfter($('#resultsCountPaginatorBlock .results-count'));
+
+    // get stored value from local storage or session storage
+    // session storage is gone when browser tab or window is closed
+    // we only want the selection to survive page reloads because of changes in searching
+    var activeTab = sessionStorage.getItem('activeTab'); //localStorage.getItem('activeTab');
+    // Maybe? Escape the value for security against injection XSS, better save than sorry
+    //activeTab = escape(activeTab)
+
+    var selectedTab = 'list'; // default
+
+    // if activeTab is not null, then show the tab
+    if (activeTab) { // we might restrict to values 'list' or 'map' only
+        console.log('activeTab: ' + activeTab)
+        $('#searchResultsViewTab button[aria-controls="'+activeTab+'"]').tab('show')
+        selectedTab = activeTab;
+    }
+    // Note that 'list' is default
+
+
+    //$('#searchResultsViewTab button').on('click', function (event) { // BS used button, PF uses a
+    $('#searchResultsViewTab a').on('click', function (event) {
+        event.preventDefault()
+        //$(this).tab('show') // BS
+        // For PF: switch class ui-tabs-selected ui-state-active to the li
+        //$('#searchResultsViewTab li').removeClass('ui-tabs-selected ui-state-active');
+        //$(this).parent().addClass('ui-tabs-selected ui-state-active');
+
+        // do other tab specific stuff here
+        console.log('clicked: ' + $(this).attr('id'))
+
+        selectedTab = $(this).attr('aria-controls');
+        // store the active tab in local storage
+        //localStorage.setItem('activeTab', $(this).attr('aria-controls'));
+        sessionStorage.setItem('activeTab', selectedTab);
+
+        updateTabsView();
+    })
+
+    // need to fix the hover effect for those PF tabs
+    $('#searchResultsViewTab li').hover(function(){
+        //console.log('hovered in: ' + $(this).find('a').attr('id'))
+        $(this).addClass("ui-state-hover");
+    }, function(){
+        //console.log('hovered out: ' + $(this).find('a').attr('id'))
+        $(this).removeClass("ui-state-hover")
+    });
+
+    function updateTabsView() {
+        // For PF: switch class ui-tabs-selected ui-state-active to the li
+        $('#searchResultsViewTab li').removeClass('ui-tabs-selected ui-state-active');
+        $('#searchResultsViewTab li').find('a[aria-controls= "' + selectedTab + '"]').parent().addClass('ui-tabs-selected ui-state-active');
+
+        if (selectedTab === 'map') {
+            // do map stuff
+            console.log('Map tab selected');
+            $('#mapview').show(); 
+            $("#resultsTable").hide();
+        } else {
+            // do list stuff
+            console.log('List tab selected');
+            $('#mapview').hide();
+            $("#resultsTable").show();
+        }
+    }  
+
+    // --- map stuff
+
     var mapviewDiv = createMapViewDiv();
     mapviewDiv.css("background-color", "#f5f5f5");
     mapviewDiv.css("font-size", "14px"); // somehow font is too small
     mapviewDiv.addClass("border");
     
     mapviewDiv.insertAfter(viewInsertionBelow);
-   
+ 
+    // problems if we do it here    updateTabsView();
+
     // Initialize map, with OpenStreetMap centered on the Netherlands but showing most of europe
     var map = L.map('geomap').setView([51.505, -0.09], 3);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -150,7 +224,7 @@ $().ready(function() {
     // assume first page, should be retrieved from the url, 
     // or we just always try to retrieve all results up to a certain limit (1000 for now?)
     var start = 0;
-    var pageSize = 1000; // default listing pagesize in dataverse is 10, but we could use more
+    var pageSize = 1000; // default listing pagesize in dataverse is 10, but we could use more, just not more than 1000
     var num_retrieved = 0;
     var searchApiUrl = constructSearchApiUrl(baseUrl)
 
@@ -161,6 +235,8 @@ $().ready(function() {
     //     searchApiUrl = constructSearchApiUrl(baseUrl)
     //     doSearchRequest(searchApiUrl);      
     // });
+
+    updateTabsView(); // must have everything initialized before this call
 
     function doSearchRequest(extractionUrl) {
         $('#spinner-searchLocation').show();
@@ -303,9 +379,63 @@ $().ready(function() {
 
 });
 
+// Don't use this; Somehow the tabs do not look bootstrapped?
+function createTabSelectionBS() {
+
+    var nav_tabs = $('<ul class="nav nav-tabs" id="myTab" role="tablist">')
+
+    var list_tab = $('<li class="nav-item" role="presentation"><button class="nav-link active" id="list-tab" type="button" role="tab" aria-controls="list" aria-selected="true"> List</button></li>');
+    nav_tabs.append(list_tab);
+
+    var list_icon = $(`<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-list-task" viewBox="0 0 16 16">
+            <path fill-rule="evenodd" d="M2 2.5a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5V3a.5.5 0 0 0-.5-.5zM3 3H2v1h1z"/>
+            <path d="M5 3.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5M5.5 7a.5.5 0 0 0 0 1h9a.5.5 0 0 0 0-1zm0 4a.5.5 0 0 0 0 1h9a.5.5 0 0 0 0-1z"/>
+            <path fill-rule="evenodd" d="M1.5 7a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5H2a.5.5 0 0 1-.5-.5zM2 7h1v1H2zm0 3.5a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5zm1 .5H2v1h1z"/>
+          </svg>`);
+    list_tab.find('button').prepend(list_icon);
+    
+    var map_tab = $('<li class="nav-item" role="presentation"><button class="nav-link" id="map-tab" type="button" role="tab" aria-controls="map" aria-selected="false"> Map</button></li>'); 
+    var map_icon = $(`<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-map" viewBox="0 0 16 16">
+            <path fill-rule="evenodd" d="M15.817.113A.5.5 0 0 1 16 .5v14a.5.5 0 0 1-.402.49l-5 1a.5.5 0 0 1-.196 0L5.5 15.01l-4.902.98A.5.5 0 0 1 0 15.5v-14a.5.5 0 0 1 .402-.49l5-1a.5.5 0 0 1 .196 0L10.5.99l4.902-.98a.5.5 0 0 1 .415.103M10 1.91l-4-.8v12.98l4 .8zm1 12.98 4-.8V1.11l-4 .8zm-6-.8V1.11l-4 .8v12.98z"/>
+          </svg>`);
+    map_tab.find('button').prepend(map_icon);
+    nav_tabs.append(map_tab);
+
+    return nav_tabs;
+}
+
+function createTabSelection() {
+    // PrimeFaces... trying to get look-and-feel right is cumbersome !
+    // Note: get hover effect right needed to handle the hover event on the li
+    var tabs = $('<div id="myTab" class="ui-tabs ui-widget ui-widget-content ui-corner-all ui-hidden-container ui-tabs-top"></div>')
+    // remove border-bottom
+    tabs.css('border-bottom', '0px');
+
+    var nav_tabs = $('<ul class="ui-tabs-nav ui-helper-reset ui-widget-header ui-corner-all" role="tablist"></ul>')
+    
+    var list_tab = $('<li class="ui-tabs-header ui-state-default ui-tabs-selected ui-state-active ui-corner-top" role="tab" tabindex="0" aria-expanded="true" aria-selected="true"><a href="" id="list-tab"  aria-controls="list"> List</a></li>');
+    nav_tabs.append(list_tab);
+    var list_icon = $(`<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-list-task" viewBox="0 0 16 16">
+            <path fill-rule="evenodd" d="M2 2.5a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5V3a.5.5 0 0 0-.5-.5zM3 3H2v1h1z"/>
+            <path d="M5 3.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5M5.5 7a.5.5 0 0 0 0 1h9a.5.5 0 0 0 0-1zm0 4a.5.5 0 0 0 0 1h9a.5.5 0 0 0 0-1z"/>
+            <path fill-rule="evenodd" d="M1.5 7a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5H2a.5.5 0 0 1-.5-.5zM2 7h1v1H2zm0 3.5a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5zm1 .5H2v1h1z"/>
+          </svg>`);
+    list_tab.find('a').prepend(list_icon);
+
+    var map_tab = $('<li class="ui-tabs-header ui-state-default ui-corner-top" role="tab" tabindex="0" aria-expanded="false" aria-selected="false"><a href="" id="map-tab" aria-controls="map" aria-selected="false"> Map</a></li>'); 
+    nav_tabs.append(map_tab);
+
+    var map_icon = $(`<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-map" viewBox="0 0 16 16">
+            <path fill-rule="evenodd" d="M15.817.113A.5.5 0 0 1 16 .5v14a.5.5 0 0 1-.402.49l-5 1a.5.5 0 0 1-.196 0L5.5 15.01l-4.902.98A.5.5 0 0 1 0 15.5v-14a.5.5 0 0 1 .402-.49l5-1a.5.5 0 0 1 .196 0L10.5.99l4.902-.98a.5.5 0 0 1 .415.103M10 1.91l-4-.8v12.98l4 .8zm1 12.98 4-.8V1.11l-4 .8zm-6-.8V1.11l-4 .8v12.98z"/>
+          </svg>`);
+    map_tab.find('a').prepend(map_icon);
+
+    tabs.append(nav_tabs);
+    return tabs;
+}
 
 // construct the html elements for the mapview
-// note that we fixed the height of the map to 320px
+// note that we fixed the height of the map to 480px; was 320px (better for sideview)
 function createMapViewDiv() {
     var mapviewDiv = $('<div id="mapview"></div>');
 
@@ -320,7 +450,7 @@ function createMapViewDiv() {
     controls.append('<div id="progress"><div id="progress-bar"></div></div>');
 
     mapviewDiv.append(controls);
-    mapviewDiv.append('<div id="geomap" style="height:320px;"></div>');
+    mapviewDiv.append('<div id="geomap" style="height:480px;"></div>');
 
     return mapviewDiv;
 }
@@ -347,8 +477,13 @@ const extractFeatures = (result) => {
             if (typeof dansSpatialPoint !== "undefined") {
                 dansSpatialPointX = dansSpatialPoint.value[0]["dansSpatialPointX"].value
                 dansSpatialPointY = dansSpatialPoint.value[0]["dansSpatialPointY"].value
+                // Check the schema of the dansSpatialPointX and dansSpatialPointY
+                // dansSpatialPointScheme value = "RD (in m.)", yes a literal string!
+                if (dansSpatialPoint.value[0]["dansSpatialPointScheme"].value !== "RD (in m.)") {
+                    console.log('Spatial point scheme not in RD, but in: ' + dansSpatialPoint.value[0]["dansSpatialPointScheme"].value);
+                    return; // skip this one
+                }
                 // calculate lat, lon in WGS84, assuming new RD in m.
-                // TODO check the schema of the dansSpatialPointX and dansSpatialPointY
                 latLon = convert(parseFloat(dansSpatialPointX), parseFloat(dansSpatialPointY))
                 lat = latLon.lat;
                 lon = latLon.lon;

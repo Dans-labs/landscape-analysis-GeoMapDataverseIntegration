@@ -147,6 +147,7 @@ At DANS this might not be a big problem, in our Archaeology archive almost all d
 References
 ----------
 
+# TODO add for customisation of the UI https://guides.dataverse.org/en/latest/installation/config.html#parts-of-a-dataverse-installation-webpage
 
 - [https://github.com/IQSS/dataverse-frontend][dataverse-frontend-code]
 

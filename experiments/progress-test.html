@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<style>
+  #result {
+    display: inline-block;
+  }
+  #pgbar {
+    display: inline-block;
+    border-style:inset; /* gutter */
+    width: auto; /*100%;*/
+    min-width: 240px;
+    margin: auto;
+    height: 7px;
+  }
+  #pgbar .pgbar-inner {
+    background-color: deepskyblue;
+    width: 0%;
+    height:100%;
+  }
+</style>
+<script>
+
+function sleep(milliseconds) {
+  const date = Date.now();
+  let currentDate = null;
+  do {
+    currentDate = Date.now();
+  } while (currentDate - date < milliseconds);
+}
+
+$(document).ready(function() {
+// initialise 
+let timeout = 1000; // small delay
+num_items = 713; //just some random number...
+items_per_step = 50;
+var start_item = 0;
+var num_collected_items = 0;
+var continue_steps = true;
+var started = false;
+
+$("#btnSubmit").click(function(){
+    if(started) {
+      // this is a stop
+      started = false; 
+      continue_steps = false; 
+      $("#btnSubmit").val("Resume");
+    } else {
+      // start running
+      started = true; 
+      continue_steps = true; 
+      $("#btnSubmit").val("Stop");
+
+
+      (function progress() {
+          if (continue_steps) {
+            // do something to retrieve next items
+            // advance
+              start_item = start_item + items_per_step;
+              num_collected_items = start_item;
+              if (start_item >= num_items) {
+                num_collected_items = num_items;
+                continue_steps = false; // done
+                $("#btnSubmit").prop('disabled', true);
+                $("#btnSubmit").val("Done");
+              }
+              let precentage = Math.floor(100*num_collected_items/num_items);
+              $("#pgbar .pgbar-inner").width(precentage + '%');
+              $("#result").html(''); // empty
+              $("#result").append("<div>" + precentage + "% Collected " + num_collected_items + " of " + num_items + "</div>");
+              setTimeout(progress, timeout); // next
+            }
+      })();
+    }
+ });
+
+});
+</script>
+</head>
+<body>
+
+<p>Results</p>
+
+<input id = "btnSubmit" type="submit" value="Start collecting"/>
+<div id="pgbar"><div class="pgbar-inner"></div></div>
+<div id="result"></div>
+
+</body>
+</html>
