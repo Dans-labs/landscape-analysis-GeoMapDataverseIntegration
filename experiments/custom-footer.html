@@ -382,7 +382,7 @@ $().ready(function() {
 // Don't use this; Somehow the tabs do not look bootstrapped?
 function createTabSelectionBS() {
 
-    var nav_tabs = $('<ul class="nav nav-tabs" id="myTab" role="tablist">')
+    var nav_tabs = $('<ul class="nav nav-tabs" id="searchResultsViewTab" role="tablist">')
 
     var list_tab = $('<li class="nav-item" role="presentation"><button class="nav-link active" id="list-tab" type="button" role="tab" aria-controls="list" aria-selected="true"> List</button></li>');
     nav_tabs.append(list_tab);
@@ -407,7 +407,7 @@ function createTabSelectionBS() {
 function createTabSelection() {
     // PrimeFaces... trying to get look-and-feel right is cumbersome !
     // Note: get hover effect right needed to handle the hover event on the li
-    var tabs = $('<div id="myTab" class="ui-tabs ui-widget ui-widget-content ui-corner-all ui-hidden-container ui-tabs-top"></div>')
+    var tabs = $('<div id="searchResultsViewTab" class="ui-tabs ui-widget ui-widget-content ui-corner-all ui-hidden-container ui-tabs-top"></div>')
     // remove border-bottom
     tabs.css('border-bottom', '0px');
 
