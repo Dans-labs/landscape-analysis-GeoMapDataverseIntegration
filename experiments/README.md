@@ -20,6 +20,18 @@ Instructions for DANS developers with access to on the `dans-core-systems` repo:
 
 When you edit that custom footer file in the `shared` directory just a browser page reload would be enough to see the difference. If you edit it in this git repo, then copy it to that shared directory after every change. Use the browser debugger/inspection tool to see those console messages and or any errors occurring. 
 
+To test it against some' real' datasets I deployed that custom-footer fragment on the test archaeology datasttation: 
+https://test.archaeology.datastations.nl/dataverse/root/
+
+The code is not production ready and also this was a temporary change and thus it might disappear after official redeploys or patches are applied to this server. 
+
+Screenshot of the Test Archaeology Datastation with List view 'tab' selected
+![test-archaeology-listview](./images/test-archaeology-listview.png)
+
+Screenshot of the Test Archaeology Datastation with the Map view 'tab' selected
+![test-archaeology-mapview](./images/test-archaeology-mapview.png)
+
+
 ### Short description of the solution: 
 
 The script in that custom footer (fragment) is kicking in with a search results page load (default the homepage). 
