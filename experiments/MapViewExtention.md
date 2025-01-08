@@ -67,5 +67,5 @@ A stand-alone html file.
 At this point just hardcoded to get search results from the Archaeology production Datastation or the dev VM. 
 Also no code yet that is looking into it's 'parent' URL from the iframe point of view.  
 
-The [stand alone mapview html file](./experiments/mapview.html).
+The [stand alone mapview html file](./mapview.html).
 
