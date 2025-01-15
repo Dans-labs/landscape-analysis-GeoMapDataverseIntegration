@@ -122,4 +122,4 @@ The JSON result fragment
 
 So that is only the URI. This means that the 'human readable' name is not indexed and thus the dataset can not be found by this name if it is only in that field. Entering an obscure placename that is not in any other metadata or file data (because full-text indexing might pick it up) confirmed this. 
 
-How can this be fixed, if we wanted to?
+It should be possible to fix this, because for ROR cvoc it is done; there I see that both the URI and the nae are indexed. But given the limited time for this PoC it was not investigated further. 
