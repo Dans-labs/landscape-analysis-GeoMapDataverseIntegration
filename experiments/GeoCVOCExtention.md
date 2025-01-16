@@ -96,7 +96,7 @@ The JSON result fragment
   "expandedvalue": [
     {
       "scheme": "GEONAMES",
-      "placeName": "Amsterdam",
+      "termName": "Amsterdam",
       "@id": "https://sws.geonames.org/2759794",
       "@type": "https://schema.org/Place"
     }
@@ -105,7 +105,8 @@ The JSON result fragment
 ```
 The field contains the URI, but there is an `expandedvalue` that also has the 'human readable' name. 
 
-The Solr search index however does not have that 'human readable' name. 
+Note that in the `geonames.json` configuration file we need to use 'termName' (or 'personName') instead of the more logical 'placeName' because otherwise the Solr search index will not have that 'human readable' name in it's index. This behavior is now 'hardcode' in Dataverse. 
+
 
 The curl call
 ```
@@ -116,10 +117,9 @@ The JSON result fragment
 
 ```
 "dansSpatialCoverageText": [
-  "https://sws.geonames.org/2759794"
+  "https://sws.geonames.org/2759794", 
+  "Amsterdam"
 ],
 ```
 
-So that is only the URI. This means that the 'human readable' name is not indexed and thus the dataset can not be found by this name if it is only in that field. Entering an obscure placename that is not in any other metadata or file data (because full-text indexing might pick it up) confirmed this. 
-
-It should be possible to fix this, because for ROR cvoc it is done; there I see that both the URI and the nae are indexed. But given the limited time for this PoC it was not investigated further. 
+So that has the URI and the 'human readable' name indexed and thus the dataset can be found by this name. Entering an obscure placename that is not in any other metadata or file data (because full-text indexing might pick it up) confirmed this. 

@@ -3,7 +3,7 @@ Adding a geospatial map of dataset search result to Dataverse
 *A 'landscape' analysis*
 ========================
 
-Version 0.3 - Concept/Draft, November 2024. 
+Version 0.4 - Concept/Draft, January 2025. 
 
 
 Introduction
@@ -147,7 +147,6 @@ At DANS this might not be a big problem, in our Archaeology archive almost all d
 References
 ----------
 
-# TODO add for customisation of the UI https://guides.dataverse.org/en/latest/installation/config.html#parts-of-a-dataverse-installation-webpage
 
 - [https://github.com/IQSS/dataverse-frontend][dataverse-frontend-code]
 
@@ -183,6 +182,9 @@ References
 [external-search-issue]: <https://github.com/IQSS/dataverse-pm/issues/279> "Project: Design and Implement External Search"
 
 
+- [ https://guides.dataverse.org/en/latest/installation/config.html#parts-of-a-dataverse-installation-webpage][guides-customisation-ui]
+
+[guides-customisation-ui]: < https://guides.dataverse.org/en/latest/installation/config.html#parts-of-a-dataverse-installation-webpage> "Dataverse Guides - Customization of the UI"
 
 **TODO:** add more links here
 
