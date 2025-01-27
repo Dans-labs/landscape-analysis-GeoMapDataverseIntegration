@@ -102,6 +102,12 @@ $().ready(function() {
         console.log('No insertion element found');
         return; // Nothing to insert or attach to!
     }
+
+    if (!hasDatasetType()) {
+        console.log('No dataset as search type');
+        return;
+    }
+
     // We could further restrict display to only specific sub-verses, determined by the url
 
     // We could also restrict to certain users when logged in, as Beta tester!
@@ -379,6 +385,30 @@ $().ready(function() {
         return apiUrl;
     }
 
+    function hasDatasetType() {
+        // get the current url
+        let url = window.location.href;
+        console.log('URL: ' + url);
+        // get the search part
+        let search = window.location.search;
+        console.log('Search: ' + search);
+        // get the query params
+        let params = new URLSearchParams(search);
+        console.log('Params: ' + params);
+
+        // check if types is specified
+        if (params.has('types') ) {
+            var types = params.get('types');
+            console.log('Types: ' + types);
+            if (types.includes('dataset')) {
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            return true;
+        }
+    }
 });
 
 // Don't use this; Somehow the tabs do not look bootstrapped?
