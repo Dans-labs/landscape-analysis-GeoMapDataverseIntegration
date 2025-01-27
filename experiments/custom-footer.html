@@ -296,7 +296,10 @@ $().ready(function() {
             // open in new window when not embedded
             //marker.bindPopup('<a href="' + dataset_url + '"' + ' target="_blank"' + '>' + feature.properties.name + '</a><br>' + feature.properties.id);
             // change current window
-            marker.bindPopup('<a href="' + dataset_url + '"' + '>' + feature.properties.name + '</a><br>' + feature.properties.id);
+            marker.bindPopup('<a href="' + dataset_url + '"' + '>' + feature.properties.name + '</a><br>' 
+                + feature.properties.authors + "; " 
+                + feature.properties.publication_date + ", <br>" 
+                + feature.properties.id);
 
             //markers.addLayer(marker);
             markerList.push(marker);
@@ -504,6 +507,10 @@ const extractFeatures = (result) => {
         console.log('Processing item: ' + value.name);
         if (typeof value.metadataBlocks !== "undefined" &&
             typeof value.metadataBlocks.dansTemporalSpatial !== "undefined") {
+            let authors   = value.authors.map(x => x).join(", ");
+            let publication_date = value.published_at.substring(0, 10); // fixed format
+            console.log('Authors: ' + authors + '; Publication date: ' + publication_date);
+
             dansSpatialPoint = value.metadataBlocks.dansTemporalSpatial.fields.find(x => x.typeName === "dansSpatialPoint");
             let title = "<span><a href='" + value.url + "' target='_blank'>" + value.name + "</a></span>";
             let location = ""; //nothing
@@ -534,6 +541,8 @@ const extractFeatures = (result) => {
                     "properties": {
                         "name": value.name,
                         "url": value.url, // note that this is the doi url, with a redirect to the actual dataset, it is persisten so wanted in a json file
+                        "authors": authors,
+                        "publication_date": publication_date,
                         "id": value.global_id
                     }
                 }
