@@ -185,12 +185,16 @@ $().ready(function() {
             $('#mapview').show(); 
             $("#resultsTable").hide();
             $(".results-sort-pagination.results-bottom").hide();
+            // hide element while keeping layout
+            $("#resultsCountPaginatorBlock .results-count").css('visibility', 'hidden');
         } else {
             // do list stuff
             console.log('List tab selected');
             $('#mapview').hide();
             $("#resultsTable").show();
             $(".results-sort-pagination.results-bottom").show();
+            // show element while keeping layout
+            $("#resultsCountPaginatorBlock .results-count").css('visibility', 'visible');
         }
     }  
 
@@ -312,6 +316,8 @@ $().ready(function() {
         // update controls for download
         $("#result-totals").html(" Retrieved " + num_retrieved + " with a point location"+ " (total number of datasets: " + result.data.total_count + ")");
         //if (num_retrieved > 0) $("#btnSubmit-searchLocation").prop('disabled', false);
+        //$("#resultsCountPaginatorBlock .results-count").html(" Retrieved " + num_retrieved + " with a point location"+ " (total number of datasets: " + result.data.total_count + ")");
+
     }
 
     function getBaseUrl() {
