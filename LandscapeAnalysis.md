@@ -3,7 +3,7 @@ Adding a geospatial map of dataset search result to Dataverse
 *A 'landscape' analysis*
 ========================
 
-Version 0.4 - Concept/Draft, January 2025. 
+Version 0.5 - Concept/Draft, January 2025. 
 
 
 Introduction
@@ -19,11 +19,15 @@ Existing geospatial functionality in Dataverse
 Dataverse can do some things with geospatial information:  
 
 - Preview of files (geojson for example) in a dataset. 
-- The search API allows for searching using geospatial parameters (see [this guide][guides-geospatial-search]). However this seems to be confined to the indexing of the custom `Geospatial Metadata` block in Solr, which is 'hardcoded' and assumes WGS84 coordinates. 
+- The search API allows for searching using geospatial parameters (see [this guide][guides-geospatial-search]). However this seems to be confined to the indexing of the custom `Geospatial Metadata` block in Solr as the following fragment from the guides indicates: 
   
-  **TODO:** Get Confirmation!
+  > The metadata fields that are geospatial indexed are “West Longitude”, “East Longitude”, “North Latitude”, and “South Latitude” from the “Geographic Bounding Box” field in the “Geospatial Metadata” block.
 
-  Note that it is not displayed on a map in Dataverse. 
+ Indexing is hardwired to the "geographicBoundingBox" fields and probably assumes WGS84 coordinates. 
+ This can be found in `src/main/java/edu/harvard/iq/dataverse/search/IndexServiceBean.java`. 
+  
+
+  Note that the location (coordinates) is not displayed on a map in Dataverse. 
   Also note that the DANS Archaeology DataStation is not using that custom block, but one of our own instead (see Appendix). 
 
 
@@ -52,7 +56,7 @@ Important aspects:
 - The frontend is done with the React framework. 
 
 Information about the roadmap can be found [here][dataverse-frontend-roadmap]. 
-It seems to be stuck at 'Q2 2024' and also the [sprint][ataverse-frontend-sprint] does not show much activity. 
+It seems to be stuck at 'Q2 2024' and also the [sprint][dataverse-frontend-sprint] does not show much activity. 
 
 It is uncertain when it will be in a state that DANS is able to have it replace the 'old' frontend. 
 
@@ -86,14 +90,23 @@ Different ways to extend the functionality
 
 ### The new architecture
 
-The new architecture has the front end as a Single Page Application (SPA). It keeps the backend, which is now allowing the configuration of the extendabilities mentioned before. It therefore seems likely that those features will be supported. 
+The new architecture has the frontend as a Single Page Application (SPA). It keeps the backend, which is now allowing the configuration of the extendability mentioned before. It therefore seemed likely that those features will be supported. However, the current implementation (a Minimal Viable Product) does not support it. 
+
+The following Google documents contain sections about 'Modularity', mention the modularity of React, but that is not the same as 'plugins' or any of this extendability we have in the 'old' version of Dataverse; custom html and css for instance. 
+
+- Dataverse SPA MVP Strategy
+https://docs.google.com/document/d/1Z1jkcL-42BTiFzrFV2XkSWLUuCq80xfCToX3xLRcIK4/edit?tab=t.0#heading=h.uwfx5y28768n
+
+- Dataverse SPA MVP Definition
+https://docs.google.com/document/d/1WnJzLeVK5eVP4_10eX6BwPAnmiamO1n2uGzcwrAsucQ/edit?tab=t.0#heading=h.uwfx5y28768n
 
 There are a lot of uncertainties:  
 
-- Could be that there will be support for pluggable components in the front end, but I did not see any indication this will be done. With React there is something ... but it is not used yet. 
+- Could be that there will be support for pluggable components in the front end, but I did not see any indication this will be done. 
 
 - There are also ideas about support for search plugins ([see this issue][external-search-issue]). 
 This would allow Dataverse to use a plugin to get search results from, instead of the built-in Solr search it is doing now. 
+
 
 
 Different ways we could add the geospatial functionality
@@ -121,9 +134,9 @@ It looks like this is difficult to do without more changes on the backend code.
 
 
 The options above are limited to display locations. The JavaScript  code contains the logic that extract the coordinates from the metadata and convert them into coordinates that can easily be displayed on the map (WGS84). 
-The Dataverse application (backend) is not aware of the geographical nature of the metadata fields. If we want to be able to do 'Geo searches', like limiting results to a bounding box, or sorting with the distance to a location for example, we would need to index them as coordinates.
+The Dataverse application (backend) is not aware of the geographical nature of the metadata fields. If we want to be able to do 'Geo searches', like limiting results to a bounding box, or sorting with the distance to a location for example, we would want to index them as coordinates.
  
-Solr can do this. (?) Somewhere it is done for that custom block DANS does not use... 
+Solr can do this and it is done in Dataverse for that custom 'geospatial' block DANS does not use: `https://github.com/IQSS/dataverse/blob/master/scripts/api/data/metadatablocks/geospatial.tsv`.
 Converting all coordinates to one common standard GPS (WGS84) which allows for comparing. The original coordinates must be stored, but for indexing these 'standard' coordinates should be indexed. 
 
 This will also allow us to search for dataset that have coordinates in the first place, instead of filtering all search results on the frontend. 
@@ -150,7 +163,7 @@ References
 
 - [https://github.com/IQSS/dataverse-frontend][dataverse-frontend-code]
 
-[dataverse-frontend-code]: <https://github.com/IQSS/dataverse-frontend> "Github repo for the Datverse frontend SPA code"
+[dataverse-frontend-code]: <https://github.com/IQSS/dataverse-frontend> "Github repo for the Dataverse frontend SPA code"
 
 - [https://beta.dataverse.org/spa/collections][dataverse-frontend-demo]
 
