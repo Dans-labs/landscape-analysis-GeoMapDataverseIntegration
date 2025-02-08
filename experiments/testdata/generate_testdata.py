@@ -1,6 +1,9 @@
 # 
 # Generate test point_data for the experiments
 
+import datetime
+import os
+import uuid
 import numpy as np
 import argparse
 import jinja2
@@ -78,13 +81,22 @@ if __name__ == '__main__':
 
     point_data = generate_point_data(n)
 
+
+    id = str(uuid.uuid4())
+    timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")   
+    
+
+    # determine location of this python file
+    path = os.path.dirname(os.path.realpath(__file__))
+
     # Using a template engine to generate json was simpler that using the json module and traversing the hierarchy
-    with open('experiments/testdata/dataset_json.j2', 'r') as f:
+    with open(path + '/dataset_json.j2', 'r') as f:
          template = jinja2.Template(f.read())
 
     for i in range(n):
-        title = 'Test dataset ' + str(i)
-        content = template.render(title=title, point=point_data[i])
+        title = 'Test dataset ' + str(i) + ' ' + id
+        keyword = 'maptest ' + timestamp
+        content = template.render(title=title, keyword=keyword, point=point_data[i])
         #with open('experiments/testdata/'+ 'dataset_json_'+str(i)+'.json', 'w') as f:
         #    f.write(content)
         result = create_dataset(api_token, server_url, parent, content)
