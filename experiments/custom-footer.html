@@ -89,6 +89,8 @@ let hasJQ = typeof jQuery === 'function';
 console.log('jQuery' + (hasJQ ? ` version ${jQuery.fn.jquery} loaded.` : ' is not loaded.')); 
 
 $().ready(function() {
+    DvAdvSearchExtender.init();
+
     console.log('start with geomap stuff');
     
     // Find insertion point for the map view div
@@ -629,6 +631,79 @@ const extractFeatures = (result) => {
         error: null,
         lat: fWgs,
         lon: lWgs
+    }
+};
+
+const DvAdvSearchExtender = {
+    init: function() {
+        console.log('DvAdvSearchExtender init');
+        
+        // Detect if this is the advanced search page
+        if (window.location.pathname.endsWith('/search')) {
+            console.log('Advanced search page detected');
+            // Just to be sure also check for #advancedSearchForm
+            if ($('#advancedSearchForm').length > 0) {
+                console.log('Advanced search form found');
+                this.addExtension();
+            } else {
+                console.log('Advanced search form not found');
+            }
+        } else {
+            console.log('Not the advanced search page');
+        }
+    },
+    addExtension: function() {
+        // add section for the map search
+        $('#advancedSearchForm').before('<h3>Explore</h3>');
+        $('#advancedSearchForm').before('<p>Search for datasets with external tools</p>');
+        // add a button to the advanced search page
+        var button = $('<button id="btnMapSearch" class="btn btn-primary">Search on Map</button>');
+        button.click(function() {
+            console.log('Search on map clicked, could navigate to different page');
+            $('#advancedSearchForm').toggle();
+        });
+        $('#advancedSearchForm').before(button);
+        $('#advancedSearchForm').before(`<p>
+            This button could navigate to another site 
+            or insert/show something on this page. <br/>
+            Now it 'toggles' the visibility of the advanced search form!
+            </p>`);
+        $('#advancedSearchForm').before('<hr>');
+
+        // insert an iframe, but other sites probably do not allow framing
+        //var iframe = $('<iframe id="mapSearchFramed" src="/dataverse-previewers-1.4/MapPreview.html"></iframe>'); 
+        var iframe = $('<iframe id="mapSearchFramed" src="https://vocabs.datastations.nl/" style="height:480px;width:100%;"></iframe>'); 
+        $('#advancedSearchForm').before(iframe);
+        $('#advancedSearchForm').before(`<p>
+            This iframe could show content from another site, 
+            but that should alow framing like our Skosmos site.
+            </p>`);
+        // Note that I could not get rid of those scrollbars except with scrolling="no"!
+        // https://skillapp.co/blog/mastering-iframe-no-scroll-how-to-remove-scrollbars-from-embedded-content-for-a-seamless-user-experience/
+
+        // add a map from OpenStreetMap, without leaflet, but we could use leaflet on other places in the page
+        $('#advancedSearchForm').before(`<iframe width="425" height="350" src="https://www.openstreetmap.org/export/embed.html?bbox=4.335222244262696%2C52.076967398325245%2C4.34735655784607%2C52.08255213979543&amp;layer=mapnik&amp;marker=52.07975985640377%2C4.341289401054382" style="border: 1px solid black"></iframe>
+           <br/><small><a href="https://www.openstreetmap.org/?mlat=52.079760&amp;mlon=4.341289#map=17/52.079760/4.341289">View Larger Map</a></small>`);
+
+
+        // add our own query form
+        //var form = $('<form id="mapSearchForm"></form>');
+        // the form could use the search API ald allow for range query ORring etc.
+        // also it could retrieve the facet information and us id differently
+        // it could use data pickers and or sliders to select ranges or periods
+        // etc.etc.
+        // as long as the results have a link to the landing pages, everything works fine
+
+
+        // Add separator for the next part, the original advanced search form
+        $('#advancedSearchForm').before('<hr>');
+
+        $('#advancedSearchForm').before(`<p>
+            The next section is the original advanced search 
+            that lets search for specific metadata field values. 
+            It could be hidden or shown with tabs or buttons.
+            </p>`);
+
     }
 };
 </script>
