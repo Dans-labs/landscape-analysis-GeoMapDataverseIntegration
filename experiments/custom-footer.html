@@ -91,6 +91,8 @@ console.log('jQuery' + (hasJQ ? ` version ${jQuery.fn.jquery} loaded.` : ' is no
 $().ready(function() {
     DvAdvSearchExtender.init();
 
+    DvGeoMapCoordinatePreviewer.init();
+
     console.log('start with geomap stuff');
     
     // Find insertion point for the map view div
@@ -634,6 +636,10 @@ const extractFeatures = (result) => {
     }
 };
 
+/**
+ * This is an example of how to extend the advanced search page
+ * with  additional controls or views; via an iframe for instance
+ */
 const DvAdvSearchExtender = {
     init: function() {
         console.log('DvAdvSearchExtender init');
@@ -706,4 +712,127 @@ const DvAdvSearchExtender = {
 
     }
 };
+
+/**
+ * This is a previewer for the geographic coordinates in the metadata
+ * It should detect the coordinates and show them on a map 
+ * However, this seems to be very problamatic with the current working of the metadata tab
+ * Also  it is difficult to add the map preview in the right place !
+ * So this is a work in progress...
+ */
+const DvGeoMapCoordinatePreviewer = {
+    init: function() {
+        console.log('DvGeoMapCoordinatePreviewer init');
+        // find the insertion points for the map preview
+        $('#metadata_dansSpatialPoint > td').each(function () {
+            // find the value of the dansSpatialPoint 
+            let dansSpatialPointText = $(this).text();
+            console.log('DansSpatialPoint: ' + dansSpatialPointText);
+
+            /// TEST Only Lat/Lon WGS84!!!!!
+            // extract with regex for '<num> <num> Longitude/latitude (degrees)'
+            let dansSpatialPoint = dansSpatialPointText.match(/(\d+\.\d+)\s*(\d+\.\d+) Longitude\/latitude \(degrees\)/);
+            // get the first match
+            if (dansSpatialPoint !== null) {
+                let lon = dansSpatialPoint[1];
+                let lat = dansSpatialPoint[2];
+                console.log('lon: ' + lon + '; lat: ' + lat);
+                // convert to lat, lon
+                //let latLon = convert(dansSpatialPoint[1], dansSpatialPoint[2]);
+                //console.log('Lat: ' + latLon.lat + '; Lon: ' + latLon.lon);
+
+                //$(this).append('<p>Geographic location of dataset: ' + lat + ', ' + lon + '</p>');
+                //metadata_dansSpatialBox = $(this).closest('tr');
+                
+                // somehow adding to the metadata_dansSpatialBox does not work
+                //$('#contentTabs').before('<p>Geographic location of dataset: ' + lat + ', ' + lon + '</p>');
+
+                // detect tab selection for datasetForm:tabView
+                $('#datasetForm').on('click', function(event) {
+                    console.log('Tab clicked');
+                    console.log("target: " + event.target);
+                    //if (event.target.url.toString() === "metadataMapTab"){
+                    //    console.log('Metadata map tab clicked');
+                    //}
+                    //$('#metadata_dansSpatialPoint').append(DvGeoMapCoordinatePreviewer.createMapPreview(lat, lon));
+
+                    DvGeoMapCoordinatePreviewer.createMapPreview('#metadata_dansSpatialPoint',lat, lon);
+
+                    // Note that we could also add a map preview here
+                    // but the content where the coordinates are displayed 
+                    // has potentially multiple point and or boxes and they are delimited by a <br/>
+                    // so we can't get a good place to insert the map preview
+                    // possible we ned to change the content and have each location 
+                    // in a separate div or span
+
+                });
+
+                // create a map preview
+                //let mapPreview = createMapPreview(latLon.lat, latLon.lon);
+                //let mapPreview = DvGeoMapCoordinatePreviewer.createMapPreview(lat, lon);
+                //$(this).append(mapPreview);
+            }
+            /*
+            // extract the x and y values
+            let x = dansSpatialPoint.split(',')[0];
+            let y = dansSpatialPoint.split(',')[1];
+            console.log('X: ' + x + '; Y: ' + y);
+            // convert to lat, lon
+            let latLon = convert(x, y);
+            console.log('Lat: ' + latLon.lat + '; Lon: ' + latLon.lon);
+            // create a map preview
+            let mapPreview = createMapPreview(latLon.lat, latLon.lon);
+            // insert the map preview
+            $(this).after(mapPreview);
+            */
+        });
+    },
+    createMapPreview: function(id, lat, lon) {
+        $(id).find('#mapPreview').remove();
+
+        // create a map preview
+        let mapPreview = $('<div id="mapPreview"></div>');
+        $(id).append(mapPreview);
+
+        mapPreview.append(`<p>Geographic location of dataset: ${lat}, ${lon}</p>`);
+
+        // add a map from OpenStreetMap, without leaflet, but we could use leaflet on other places in the page
+        //mapPreview.append(`<iframe width="425" height="350" 
+        //src="https://www.openstreetmap.org/export/embed.html?bbox=4.335222244262696%2C52.076967398325245%2C4.34735655784607%2C52.08255213979543&amp;layer=mapnik&amp;
+        //marker=${lat}%2C${lon}" style="border: 1px solid black"></iframe>
+        //   <br/><small><a href="https://www.openstreetmap.org/?mlat=${lat}&amp;mlon=${lon}#map=17/${lat}/${lon}" target="_blank">View Larger Map</a></small>`);
+        //
+        mapPreview.append(`<br/><small><a href="https://www.openstreetmap.org/?mlat=${lat}&amp;mlon=${lon}#map=17/${lat}/${lon}" target="_blank">View Larger Map</a></small>`);
+        
+        // use leaflet to show the map
+        let mapDiv = $('<div id="geomapPreviewLocation" style="height:180px;"></div>');
+        mapPreview.append(mapDiv);
+        // create a leaflet map
+        let mapPreviewLocation = L.map('geomapPreviewLocation').setView([lat, lon], 12);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 18,
+            attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, ' +
+                '<a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
+                'Imagery © <a href="https://www.openstreetmap.org/">OpenStreetMap</a>'
+        }).addTo(mapPreviewLocation);
+
+        let marker = L.marker([lat, lon])
+        marker.addTo(mapPreviewLocation);
+
+        //mapPreviewLocation.setView([lat, lon], 13);
+        mapPreviewLocation.invalidateSize();
+        //return mapPreview;
+
+        pDiv = $('<a href="#" data-toggle="popover" title="Popover Header" data-trigger="hover" data-content="Some content inside the popover">Toggle popover</a>');
+        mapPreview.append(pDiv);
+        pDiv.popover({
+            html: true,
+            content: function () {
+                return $('#geomapPreviewLocation').html();
+            }
+        });  
+ 
+    }
+};
+
 </script>
