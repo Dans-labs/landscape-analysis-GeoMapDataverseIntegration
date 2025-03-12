@@ -92,6 +92,8 @@ $().ready(function() {
     DvAdvSearchExtender.init();
 
     DvGeoMapCoordinatePreviewer.init();
+    // experimental previewer, not yet working
+    //DvGeoMapCoordinatePreviewer2.init();
 
     console.log('start with geomap stuff');
     
@@ -832,6 +834,87 @@ const DvGeoMapCoordinatePreviewer = {
             }
         });  
  
+    }
+};
+
+const DvGeoMapCoordinatePreviewer2 = {
+    init: function() {
+        console.log('DvGeoMapCoordinatePreviewer2 init');
+
+        //$('#datasetForm:editMetadata').on('click', function(event) {
+
+
+        // need to look at every click event and then decide if we need to do something
+        $("*").on('click', $.proxy(function() {
+            // get the event target
+            var target = $(event.target);
+            // check if it is that collapsed element
+            if (target  && target.hasClass('collapsed')) {
+                console.log('Collapsed element clicked');
+                console.log('Text: ' + target.text());
+                if (target.text().trim() === 'Temporal and Spatial Coverage') {
+                    console.log('Edit metadata clicked');
+                    // find the insertion points for the map preview
+                    $('#metadata_dansSpatialPoint').each(function () {
+                        // TODO find the value of the dansSpatialPoint 
+                        let pButton = $('<button type="button" class="btn btn-info" id="popoverButton">Click me for popover</button>');
+                    
+                        $(this).append(pButton);
+                        // Initialize popover
+                        $('#popoverButton').popover({
+                            title: '<strong>Popover Title</strong>',
+                            content: '<p>This is some <strong>HTML</strong> content inside the popover.</p>',
+                            html: true
+                        });
+                        // Add elements when popover is shown
+                        $('#popoverButton').on('shown.bs.popover', function () {
+                            // Find the popover content
+                            var popoverContent = $(this).data('bs.popover').$tip.find('.popover-content');
+                            // Add new content/elements (e.g., a new paragraph)
+                            popoverContent.append('<p>This is some dynamically added content!</p>');
+                            // You can also add other elements or do more actions
+                            popoverContent.append('<button class="btn btn-success">New Button</button>');
+                        });
+                    });
+                }
+            }
+            /*
+            var isEditMetadata = $('.collapsed').filter(function() {
+                return ($(this).text() === 'Temporal and Spatial Coverage');
+            });
+            if (!isEditMetadata) {
+                return;
+            }
+            console.log('Edit metadata clicked');
+            // find the insertion points for the map preview
+            $('#metadata_dansSpatialPoint').each(function () {
+                // TODO find the value of the dansSpatialPoint 
+                let pButton = $('<button type="button" class="btn btn-info" id="popoverButton">Click me for popover</button>');
+            
+                $(this).append(pButton);
+                // Initialize popover
+                $('#popoverButton').popover({
+                    title: '<strong>Popover Title</strong>',
+                    content: '<p>This is some <strong>HTML</strong> content inside the popover.</p>',
+                    html: true
+                });
+                // Add elements when popover is shown
+                $('#popoverButton').on('shown.bs.popover', function () {
+                    // Find the popover content
+                    var popoverContent = $(this).data('bs.popover').$tip.find('.popover-content');
+                    // Add new content/elements (e.g., a new paragraph)
+                    popoverContent.append('<p>This is some dynamically added content!</p>');
+                    // You can also add other elements or do more actions
+                    popoverContent.append('<button class="btn btn-success">New Button</button>');
+                });
+            });
+            */
+        }, this));
+        // find the insertion points for the map preview
+        // this time on the input form
+
+    },
+    createMapPreview: function(id, lat, lon) {
     }
 };
 
