@@ -716,87 +716,94 @@ const DvAdvSearchExtender = {
 };
 
 /**
- * This is a previewer for the geographic coordinates in the metadata
+ * This is a previewer for the geographic coordinates in the metadata of a Dataset
  * It should detect the coordinates and show them on a map 
- * However, this seems to be very problamatic with the current working of the metadata tab
+ * However, this seems to be very problematic with the current working of the metadata tab
  * Also  it is difficult to add the map preview in the right place !
  * So this is a work in progress...
  */
 const DvGeoMapCoordinatePreviewer = {
     init: function() {
         console.log('DvGeoMapCoordinatePreviewer init');
-        // find the insertion points for the map preview
-        $('#metadata_dansSpatialPoint > td').each(function () {
-            // find the value of the dansSpatialPoint 
-            let dansSpatialPointText = $(this).text();
+
+        var mapPreviewLocation = null;
+
+        // Detect if we have points metadata
+        let metadata_dansSpatialPoint = $('#metadata_dansSpatialPoint');
+        if (metadata_dansSpatialPoint.length > 0) {
+            console.log('DansSpatialPoint metadata found');
+            let dansSpatialPointText = $('#metadata_dansSpatialPoint > td').text();
             console.log('DansSpatialPoint: ' + dansSpatialPointText);
 
-            /// TEST Only Lat/Lon WGS84!!!!!
-            // extract with regex for '<num> <num> Longitude/latitude (degrees)'
-            let dansSpatialPoint = dansSpatialPointText.match(/(\d+\.\d+)\s*(\d+\.\d+) Longitude\/latitude \(degrees\)/);
-            // get the first match
-            if (dansSpatialPoint !== null) {
-                let lon = dansSpatialPoint[1];
-                let lat = dansSpatialPoint[2];
-                console.log('lon: ' + lon + '; lat: ' + lat);
-                // convert to lat, lon
-                //let latLon = convert(dansSpatialPoint[1], dansSpatialPoint[2]);
-                //console.log('Lat: ' + latLon.lat + '; Lon: ' + latLon.lon);
+            let points = DvGeoMapCoordinatePreviewer.extractPoints(dansSpatialPointText);
+            console.log('Points: ' + points);
+            // add a map preview
+            //this.addMapPreview(metadata_dansSpatialPoint);
+            // detect tab selection for datasetForm:tabView
+            $('#datasetForm').on('click', function(event) {
+                //console.log("target: " + event.target);
+                // get text of this dom element
+                //console.log("target text: " + event.target.textContent);
 
-                //$(this).append('<p>Geographic location of dataset: ' + lat + ', ' + lon + '</p>');
-                //metadata_dansSpatialBox = $(this).closest('tr');
-                
-                // somehow adding to the metadata_dansSpatialBox does not work
-                //$('#contentTabs').before('<p>Geographic location of dataset: ' + lat + ', ' + lon + '</p>');
+                // match 'Temporal and Spatial Coverage'  with regex
+                // Note that some parent element will also have this ...
+                // could try to narrow it down, luckily we chEck for existence of the metadata_dansSpatialPoint
+                // in that createMapPreview function
+                let matchTitle = event.target.textContent.match(/\s*Temporal and Spatial Coverage\s*/);
+                if (matchTitle !== null) {
+                    console.log('Temporal and Spatial Coverage clicked');
+                    mapPreviewLocation = DvGeoMapCoordinatePreviewer.createMapPreview('#metadata_dansSpatialPoint', points);
+                    // if (mapPreviewLocation !== undefined && mapPreviewLocation !== null) {
+                    // could do some stuff here
+                }
 
-                // detect tab selection for datasetForm:tabView
-                $('#datasetForm').on('click', function(event) {
-                    console.log('Tab clicked');
-                    console.log("target: " + event.target);
-                    //if (event.target.url.toString() === "metadataMapTab"){
-                    //    console.log('Metadata map tab clicked');
-                    //}
-                    //$('#metadata_dansSpatialPoint').append(DvGeoMapCoordinatePreviewer.createMapPreview(lat, lon));
-
-                    DvGeoMapCoordinatePreviewer.createMapPreview('#metadata_dansSpatialPoint',lat, lon);
-
-                    // Note that we could also add a map preview here
-                    // but the content where the coordinates are displayed 
-                    // has potentially multiple point and or boxes and they are delimited by a <br/>
-                    // so we can't get a good place to insert the map preview
-                    // possible we ned to change the content and have each location 
-                    // in a separate div or span
-
-                });
-
-                // create a map preview
-                //let mapPreview = createMapPreview(latLon.lat, latLon.lon);
-                //let mapPreview = DvGeoMapCoordinatePreviewer.createMapPreview(lat, lon);
-                //$(this).append(mapPreview);
-            }
-            /*
-            // extract the x and y values
-            let x = dansSpatialPoint.split(',')[0];
-            let y = dansSpatialPoint.split(',')[1];
-            console.log('X: ' + x + '; Y: ' + y);
-            // convert to lat, lon
-            let latLon = convert(x, y);
-            console.log('Lat: ' + latLon.lat + '; Lon: ' + latLon.lon);
-            // create a map preview
-            let mapPreview = createMapPreview(latLon.lat, latLon.lon);
-            // insert the map preview
-            $(this).after(mapPreview);
-            */
-        });
+                // Note that we could also add a map preview  at the top of the metadata
+                // as a top row of the table. 
+                // But now place the map where the coordinates (values) are displayed 
+                // has potentially multiple point and or boxes and they are delimited by a <br/>
+                // so we can't get a good place to insert the map preview
+                // possible we ned to change the content and have each location 
+                // in a separate div or span
+            });
+        } else {
+            console.log('DansSpatialPoint metadata not found');
+        }
     },
-    createMapPreview: function(id, lat, lon) {
-        $(id).find('#mapPreview').remove();
+    extractPoints: function(text) {
+        let points = [];
+        // TODO add original coordinates to the points, could put that in pop-up text per marker...
+        // Note that we know there is a newline separation we will use the regexp matchAll
+        // extract Longitude/latitude (degrees)'
+        let dansSpatialPointDegreesMatches = text.matchAll(/(\d+\.?\d+)\s*(\d+\.?\d+) Longitude\/latitude \(degrees\)/g);
+        for (const match of dansSpatialPointDegreesMatches) {
+            console.log('Lon/Lat (degrees) coordinates found');
+            let lon = match[1];
+            let lat = match[2];
+            console.log('Lat: ' + lat + '; Lon: ' + lon);
+            points.push({"coordinates":[lat, lon]});
+        }
+        // try matching RD
+        let dansSpatialPointRDMatches = text.matchAll(/(\d+\.?\d+)\s*(\d+\.?\d+) RD \(in m\.\)/g);
+        for (const match of dansSpatialPointRDMatches) {
+            console.log('RD (in m.) coordinates found');
+            // convert to lat, lon
+            let latLon = convert(match[1], match[2]);
+            console.log('Lat: ' + latLon.lat + '; Lon: ' + latLon.lon);
+            points.push({"coordinates":[latLon.lat, latLon.lon]});
+        }
+        return points;
+    },
+    createMapPreview: function(id, points) {
+        //$(id).find('#mapPreview').remove(); // then with every click we remove adn reset the map preview
+        // If I just return when it is there
+        if ($(id).find('#mapPreview').length > 0 ) {
+            console.log('Map preview already exists');
+            return null; // return  if found, nothing to do
+        }
 
         // create a map preview
         let mapPreview = $('<div id="mapPreview"></div>');
         $(id).append(mapPreview);
-
-        mapPreview.append(`<p>Geographic location of dataset: ${lat}, ${lon}</p>`);
 
         // add a map from OpenStreetMap, without leaflet, but we could use leaflet on other places in the page
         //mapPreview.append(`<iframe width="425" height="350" 
@@ -804,13 +811,13 @@ const DvGeoMapCoordinatePreviewer = {
         //marker=${lat}%2C${lon}" style="border: 1px solid black"></iframe>
         //   <br/><small><a href="https://www.openstreetmap.org/?mlat=${lat}&amp;mlon=${lon}#map=17/${lat}/${lon}" target="_blank">View Larger Map</a></small>`);
         //
-        mapPreview.append(`<br/><small><a href="https://www.openstreetmap.org/?mlat=${lat}&amp;mlon=${lon}#map=17/${lat}/${lon}" target="_blank">View Larger Map</a></small>`);
+        //mapPreview.append(`<br/><small><a href="https://www.openstreetmap.org/?mlat=${lat}&amp;mlon=${lon}#map=17/${lat}/${lon}" target="_blank">View Larger Map</a></small>`);
         
         // use leaflet to show the map
-        let mapDiv = $('<div id="geomapPreviewLocation" style="height:180px;"></div>');
+        let mapDiv = $('<div id="geomapPreviewLocation" style="width:320px;height:240px;min-height:240px;border:1px solid;"></div>');
         mapPreview.append(mapDiv);
         // create a leaflet map
-        let mapPreviewLocation = L.map('geomapPreviewLocation').setView([lat, lon], 12);
+        let mapPreviewLocation = L.map('geomapPreviewLocation').setView([52.0, 5.0], 12);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 18,
             attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, ' +
@@ -818,25 +825,48 @@ const DvGeoMapCoordinatePreviewer = {
                 'Imagery © <a href="https://www.openstreetmap.org/">OpenStreetMap</a>'
         }).addTo(mapPreviewLocation);
 
-        let marker = L.marker([lat, lon])
-        marker.addTo(mapPreviewLocation);
-
-        //mapPreviewLocation.setView([lat, lon], 13);
+        let markers = [];
+        // get each point from points
+        for (let i = 0; i < points.length; i++) {
+            let point = points[i];
+            console.log('Point: ' + point.coordinates);
+            let lat = point.coordinates[0];
+            let lon = point.coordinates[1];
+            // add a marker for each point
+            let marker = L.marker([lat, lon])
+            markers.push(marker);
+        }
+        const featureGroup = L.featureGroup(markers).addTo(mapPreviewLocation);
+        // zoom to extend; show all markers but zoomed in as much as possible
+        mapPreviewLocation.fitBounds(featureGroup.getBounds(), {padding: [20, 20]});
         mapPreviewLocation.invalidateSize();
-        //return mapPreview;
+        // since all this is part of (animated) bootstrap (PrimeFaces) stuff for the panel this is on
+        // we need to trigger a resize event to get the map to show correctly
+        // When incorrect, just a little manual browser window resizing seems to fix it....
+        // Now to fix it we need to do the invalidateSize  with a delay !    
+        setTimeout(() => {
+            mapPreviewLocation.invalidateSize();
+            mapPreviewLocation.fitBounds(featureGroup.getBounds());
+            // make the bounds a bit wider
+            mapPreviewLocation.fitBounds(featureGroup.getBounds(), {padding: [20, 20]});
+            // window.dispatchEvent(new Event('resize'));
+        }, 300); // slight delay helps with animations/layout shifts
 
-        pDiv = $('<a href="#" data-toggle="popover" title="Popover Header" data-trigger="hover" data-content="Some content inside the popover">Toggle popover</a>');
-        mapPreview.append(pDiv);
-        pDiv.popover({
-            html: true,
-            content: function () {
-                return $('#geomapPreviewLocation').html();
-            }
-        });  
+        return mapPreviewLocation;
+
+        // pDiv = $('<a href="#" data-toggle="popover" title="Popover Header" data-trigger="hover" data-content="Some content inside the popover">Toggle popover</a>');
+        // mapPreview.append(pDiv);
+        // pDiv.popover({
+        //     html: true,
+        //     content: function () {
+        //         return $('#geomapPreviewLocation').html();
+        //     }
+        // });  
  
     }
 };
 
+// experimenting with popovers
 const DvGeoMapCoordinatePreviewer2 = {
     init: function() {
         console.log('DvGeoMapCoordinatePreviewer2 init');
