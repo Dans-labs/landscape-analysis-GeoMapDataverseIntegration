@@ -780,7 +780,7 @@ const DvGeoMapCoordinatePreviewer = {
             let lon = match[1];
             let lat = match[2];
             console.log('Lat: ' + lat + '; Lon: ' + lon);
-            points.push({"coordinates":[lat, lon]});
+            points.push({"coordinates":[lat, lon], title: `Lon/Lat (degrees): ${lon}, ${lat}`});
         }
         // try matching RD
         let dansSpatialPointRDMatches = text.matchAll(/(\d+\.?\d+)\s*(\d+\.?\d+) RD \(in m\.\)/g);
@@ -789,7 +789,7 @@ const DvGeoMapCoordinatePreviewer = {
             // convert to lat, lon
             let latLon = convert(match[1], match[2]);
             console.log('Lat: ' + latLon.lat + '; Lon: ' + latLon.lon);
-            points.push({"coordinates":[latLon.lat, latLon.lon]});
+            points.push({"coordinates":[latLon.lat, latLon.lon], title: `RD (in m.): ${match[1]}, ${match[2]}`});
         }
         return points;
     },
@@ -834,6 +834,7 @@ const DvGeoMapCoordinatePreviewer = {
             let lon = point.coordinates[1];
             // add a marker for each point
             let marker = L.marker([lat, lon])
+                .bindPopup(point.title);
             markers.push(marker);
         }
         const featureGroup = L.featureGroup(markers).addTo(mapPreviewLocation);
