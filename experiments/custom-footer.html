@@ -839,7 +839,7 @@ const DvGeoMapCoordinatePreviewer = {
             // convert to lat, lon
             let latLon = convert(match[1], match[2]);
             console.log('Lat: ' + latLon.lat + '; Lon: ' + latLon.lon);
-            points.push({"coordinates":[latLon.lat, latLon.lon], title: `RD (in m.): ${match[1]}, ${match[2]}`});
+            points.push({"coordinates":[latLon.lat, latLon.lon], "title": `RD (in m.): ${match[1]}, ${match[2]}`});
         }
         return points;
     },
@@ -849,13 +849,25 @@ const DvGeoMapCoordinatePreviewer = {
         let dansSpatialBoxDegreesMatches = text.matchAll(/(\d+\.?\d+)\s*(\d+\.?\d+)\s*(\d+\.?\d+)\s*(\d+\.?\d+) Longitude\/latitude \(degrees\)/g);
         for (const match of dansSpatialBoxDegreesMatches) {
             console.log('Lon/Lat (degrees) coordinates found');
-            let north = match[1];
-            let east = match[2];
-            let south = match[3];
-            let west = match[4];
-            console.log('North: ' + north + '; East: ' + east + '; South: ' + south + '; West: ' + west);
+            let dansSpatialBoxNorth = match[1];
+            let dansSpatialBoxEast = match[2];
+            let dansSpatialBoxSouth = match[3];
+            let dansSpatialBoxWest = match[4];
+
+            // initialize the feature with the bounding box, WGS8 default
+            var latLon_NE = {lat: parseFloat(dansSpatialBoxNorth), lon: parseFloat(dansSpatialBoxEast)};
+            var latLon_SW = {lat: parseFloat(dansSpatialBoxSouth), lon: parseFloat(dansSpatialBoxWest)};
+
+            polygons.push({"coordinates": [[latLon_SW.lat, latLon_SW.lon],
+                                    [latLon_NE.lat, latLon_SW.lon],
+                                    [latLon_NE.lat, latLon_NE.lon],
+                                    [latLon_SW.lat, latLon_NE.lon],
+                                    [latLon_SW.lat, latLon_SW.lon]], 
+                                    "title": `Lon/Lat (degrees): ${dansSpatialBoxNorth}, ${dansSpatialBoxEast}, 
+                                    ${dansSpatialBoxSouth}, ${dansSpatialBoxWest}`});
             // not sure if this is the correct polygon, maybe we need to reorder or close it?
-            polygons.push({"coordinates":[north, east, south, west ], title: `Lon/Lat (degrees): ${north}, ${east}, ${south}, ${west}`});
+            //console.log('North: ' + north + '; East: ' + east + '; South: ' + south + '; West: ' + west);
+            //polygons.push({"coordinates":[north, east, south, west ], title: `Lon/Lat (degrees): ${north}, ${east}, ${south}, ${west}`});
         }
         return polygons;
     },
@@ -880,7 +892,7 @@ const DvGeoMapCoordinatePreviewer = {
         //mapPreview.append(`<br/><small><a href="https://www.openstreetmap.org/?mlat=${lat}&amp;mlon=${lon}#map=17/${lat}/${lon}" target="_blank">View Larger Map</a></small>`);
         
         // use leaflet to show the map
-        let mapDiv = $('<div id="geomapPreviewLocation" style="width:320px;height:240px;min-height:240px;border:1px solid;"></div>');
+        let mapDiv = $('<div id="geomapPreviewLocation" style="width:320px;height:240px;min-height:240px;border:1px solid;margin-bottom:5px;"></div>');
         mapPreview.append(mapDiv);
         // create a leaflet map
         let mapPreviewLocation = L.map('geomapPreviewLocation').setView([52.0, 5.0], 12);
@@ -931,7 +943,7 @@ const DvGeoMapCoordinatePreviewer = {
         // });  
  
     },
-    createMapPreviewBoxes: function(id, points) {
+    createMapPreviewBoxes: function(id, polygons) {
         const preview_id_prefix = 'boxes' + '_';
         //$(id).find('#mapPreview').remove(); // then with every click we remove adn reset the map preview
         // If I just return when it is there
@@ -944,6 +956,17 @@ const DvGeoMapCoordinatePreviewer = {
         let mapPreview = $('<div id="' + preview_id_prefix + 'mapPreview"></div>');
         $(id).append(mapPreview);
 
+        // Use different color for the marker balloon (icon) 
+        // if we have polygons, which is bounding box in simplest case
+        let redIcon = L.icon({
+            iconUrl: 'https://cdn.rawgit.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.3.1/images/marker-shadow.png',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowSize: [41, 41]
+        });
+
         // add a map from OpenStreetMap, without leaflet, but we could use leaflet on other places in the page
         //mapPreview.append(`<iframe width="425" height="350" 
         //src="https://www.openstreetmap.org/export/embed.html?bbox=4.335222244262696%2C52.076967398325245%2C4.34735655784607%2C52.08255213979543&amp;layer=mapnik&amp;
@@ -953,7 +976,7 @@ const DvGeoMapCoordinatePreviewer = {
         //mapPreview.append(`<br/><small><a href="https://www.openstreetmap.org/?mlat=${lat}&amp;mlon=${lon}#map=17/${lat}/${lon}" target="_blank">View Larger Map</a></small>`);
         
         // use leaflet to show the map
-        let mapDiv = $('<div id="' + preview_id_prefix + 'geomapPreviewLocation" style="width:320px;height:240px;min-height:240px;border:1px solid;"></div>');
+        let mapDiv = $('<div id="' + preview_id_prefix + 'geomapPreviewLocation" style="width:320px;height:240px;min-height:240px;border:1px solid;margin-bottom:5px;"></div>');
         mapPreview.append(mapDiv);
         // create a leaflet map
         let mapPreviewLocation = L.map('' + preview_id_prefix + 'geomapPreviewLocation').setView([52.0, 5.0], 12);
@@ -966,14 +989,31 @@ const DvGeoMapCoordinatePreviewer = {
 
         let markers = [];
         // get each point from points
-        for (let i = 0; i < points.length; i++) {
-            let point = points[i];
-            console.log('Point: ' + point.coordinates);
-            let lat = point.coordinates[0];
-            let lon = point.coordinates[1];
-            // add a marker for each point
-            let marker = L.marker([lat, lon])
-                .bindPopup(point.title);
+        for (let i = 0; i < polygons.length; i++) {
+            let polygon = polygons[i];
+            console.log('polygon: ' + polygon.coordinates);
+
+            // calculate center of the polygon (could be bounding box)
+            // Note that we only use the first polygon, there could be more in the future
+            let p = L.polygon(polygon.coordinates, {color: 'red'});
+
+            // add the polygon to the map
+            //p.addTo(mapPreviewLocation);
+            markers.push(p); // markers name is misleading , 
+            // should be features or we put the polygons in different layer?
+
+            // 'red' marker at center
+            let bounds = p.getBounds();
+            let center = bounds.getCenter();
+            lon = center.lng;
+            lat = center.lat;
+
+            // add a marker for each polygon
+            //let marker = L.marker([lat, lon])
+            //    .bindPopup(polygon.title);
+            let marker = L.marker([lat, lon], {icon: redIcon})
+                .bindPopup(polygon.title);
+
             markers.push(marker);
         }
         const featureGroup = L.featureGroup(markers).addTo(mapPreviewLocation);
