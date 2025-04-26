@@ -865,10 +865,31 @@ const DvGeoMapCoordinatePreviewer = {
                                     [latLon_SW.lat, latLon_SW.lon]], 
                                     "title": `Lon/Lat (degrees): ${dansSpatialBoxNorth}, ${dansSpatialBoxEast}, 
                                     ${dansSpatialBoxSouth}, ${dansSpatialBoxWest}`});
-            // not sure if this is the correct polygon, maybe we need to reorder or close it?
-            //console.log('North: ' + north + '; East: ' + east + '; South: ' + south + '; West: ' + west);
-            //polygons.push({"coordinates":[north, east, south, west ], title: `Lon/Lat (degrees): ${north}, ${east}, ${south}, ${west}`});
         }
+
+        // try matching RD
+        let dansSpatialBoxRDMatches = text.matchAll(/(\d+\.?\d+)\s*(\d+\.?\d+)\s*(\d+\.?\d+)\s*(\d+\.?\d+) RD \(in m\.\)/g);
+        for (const match of dansSpatialBoxRDMatches) {
+            console.log('RD (in m.) coordinates found');
+            let dansSpatialBoxNorth = match[1];
+            let dansSpatialBoxEast = match[2];
+            let dansSpatialBoxSouth = match[3];
+            let dansSpatialBoxWest = match[4];
+
+            var latLon_NE = {lat: parseFloat(dansSpatialBoxNorth), lon: parseFloat(dansSpatialBoxEast)};
+            var latLon_SW = {lat: parseFloat(dansSpatialBoxSouth), lon: parseFloat(dansSpatialBoxWest)};
+            // convert to WGS84
+            latLon_NE = convert(latLon_NE.lon, latLon_NE.lat);
+            latLon_SW = convert(latLon_SW.lon, latLon_SW.lat);
+            polygons.push({"coordinates": [[latLon_SW.lat, latLon_SW.lon],
+                                    [latLon_NE.lat, latLon_SW.lon],
+                                    [latLon_NE.lat, latLon_NE.lon],
+                                    [latLon_SW.lat, latLon_NE.lon],
+                                    [latLon_SW.lat, latLon_SW.lon]], 
+                                    "title": `RD (in m.): ${dansSpatialBoxNorth}, ${dansSpatialBoxEast}, 
+                                    ${dansSpatialBoxSouth}, ${dansSpatialBoxWest}`});
+        }
+
         return polygons;
     },
     createMapPreview: function(id, points) {
