@@ -728,6 +728,50 @@ const DvGeoMapCoordinatePreviewer = {
 
         var mapPreviewLocation = null;
 
+        // Detect if we have bounding box metadata
+        let metadata_dansSpatialBox = $('#metadata_dansSpatialBox');
+        if (metadata_dansSpatialBox.length > 0) {
+            console.log('DansSpatialBox metadata found');
+            let dansSpatialBoxText = $('#metadata_dansSpatialBox > td').text();
+            console.log('DansSpatialBox: ' + dansSpatialBoxText);
+            let polygons = DvGeoMapCoordinatePreviewer.extractPolygons(dansSpatialBoxText);
+            console.log('Polygons: ' + polygons);
+            // bounding boxes in their own map ?????
+
+            //createMapPreviewBoxes
+                        // add a map preview
+            //this.addMapPreview(metadata_dansSpatialPoint);
+            // detect tab selection for datasetForm:tabView
+            $('#datasetForm').on('click', function(event) {
+                //console.log("target: " + event.target);
+                // get text of this dom element
+                //console.log("target text: " + event.target.textContent);
+
+                // match 'Temporal and Spatial Coverage'  with regex
+                // Note that some parent element will also have this ...
+                // could try to narrow it down, luckily we chEck for existence of the metadata_dansSpatialPoint
+                // in that createMapPreview function
+                let matchTitle = event.target.textContent.match(/\s*Temporal and Spatial Coverage\s*/);
+                if (matchTitle !== null) {
+                    console.log('Temporal and Spatial Coverage clicked');
+                    DvGeoMapCoordinatePreviewer.createMapPreviewBoxes('#metadata_dansSpatialBox', polygons);
+                    // if (mapPreviewLocation !== undefined && mapPreviewLocation !== null) {
+                    // could do some stuff here
+                }
+
+                // Note that we could also add a map preview  at the top of the metadata
+                // as a top row of the table. 
+                // But now place the map where the coordinates (values) are displayed 
+                // has potentially multiple point and or boxes and they are delimited by a <br/>
+                // so we can't get a good place to insert the map preview
+                // possible we ned to change the content and have each location 
+                // in a separate div or span
+            });
+        } else {
+            console.log('DansSpatialBox metadata not found');
+        }
+        
+
         // Detect if we have points metadata
         let metadata_dansSpatialPoint = $('#metadata_dansSpatialPoint');
         if (metadata_dansSpatialPoint.length > 0) {
@@ -735,8 +779,14 @@ const DvGeoMapCoordinatePreviewer = {
             let dansSpatialPointText = $('#metadata_dansSpatialPoint > td').text();
             console.log('DansSpatialPoint: ' + dansSpatialPointText);
 
+            // because we extract the coordinates from the text, we don't need to do a search request, 
+            // and we can simply also display drafts etc. 
+            // The initial idea was to replace the text with coordinates as links 
+            // to external maps or even with an iframe
+
             let points = DvGeoMapCoordinatePreviewer.extractPoints(dansSpatialPointText);
             console.log('Points: ' + points);
+            
             // add a map preview
             //this.addMapPreview(metadata_dansSpatialPoint);
             // detect tab selection for datasetForm:tabView
@@ -792,6 +842,22 @@ const DvGeoMapCoordinatePreviewer = {
             points.push({"coordinates":[latLon.lat, latLon.lon], title: `RD (in m.): ${match[1]}, ${match[2]}`});
         }
         return points;
+    },
+    extractPolygons: function(text) {
+        // for DANS arch. we have bounding boxes, but we handle them as polygons
+        let polygons = [];
+        let dansSpatialBoxDegreesMatches = text.matchAll(/(\d+\.?\d+)\s*(\d+\.?\d+)\s*(\d+\.?\d+)\s*(\d+\.?\d+) Longitude\/latitude \(degrees\)/g);
+        for (const match of dansSpatialBoxDegreesMatches) {
+            console.log('Lon/Lat (degrees) coordinates found');
+            let north = match[1];
+            let east = match[2];
+            let south = match[3];
+            let west = match[4];
+            console.log('North: ' + north + '; East: ' + east + '; South: ' + south + '; West: ' + west);
+            // not sure if this is the correct polygon, maybe we need to reorder or close it?
+            polygons.push({"coordinates":[north, east, south, west ], title: `Lon/Lat (degrees): ${north}, ${east}, ${south}, ${west}`});
+        }
+        return polygons;
     },
     createMapPreview: function(id, points) {
         //$(id).find('#mapPreview').remove(); // then with every click we remove adn reset the map preview
@@ -864,7 +930,72 @@ const DvGeoMapCoordinatePreviewer = {
         //     }
         // });  
  
+    },
+    createMapPreviewBoxes: function(id, points) {
+        const preview_id_prefix = 'boxes' + '_';
+        //$(id).find('#mapPreview').remove(); // then with every click we remove adn reset the map preview
+        // If I just return when it is there
+        if ($(id).find('#' + preview_id_prefix + 'mapPreview').length > 0 ) {
+            console.log('Map preview already exists');
+            return null; // return  if found, nothing to do
+        }
+
+        // create a map preview
+        let mapPreview = $('<div id="' + preview_id_prefix + 'mapPreview"></div>');
+        $(id).append(mapPreview);
+
+        // add a map from OpenStreetMap, without leaflet, but we could use leaflet on other places in the page
+        //mapPreview.append(`<iframe width="425" height="350" 
+        //src="https://www.openstreetmap.org/export/embed.html?bbox=4.335222244262696%2C52.076967398325245%2C4.34735655784607%2C52.08255213979543&amp;layer=mapnik&amp;
+        //marker=${lat}%2C${lon}" style="border: 1px solid black"></iframe>
+        //   <br/><small><a href="https://www.openstreetmap.org/?mlat=${lat}&amp;mlon=${lon}#map=17/${lat}/${lon}" target="_blank">View Larger Map</a></small>`);
+        //
+        //mapPreview.append(`<br/><small><a href="https://www.openstreetmap.org/?mlat=${lat}&amp;mlon=${lon}#map=17/${lat}/${lon}" target="_blank">View Larger Map</a></small>`);
+        
+        // use leaflet to show the map
+        let mapDiv = $('<div id="' + preview_id_prefix + 'geomapPreviewLocation" style="width:320px;height:240px;min-height:240px;border:1px solid;"></div>');
+        mapPreview.append(mapDiv);
+        // create a leaflet map
+        let mapPreviewLocation = L.map('' + preview_id_prefix + 'geomapPreviewLocation').setView([52.0, 5.0], 12);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 18,
+            attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, ' +
+                '<a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
+                'Imagery © <a href="https://www.openstreetmap.org/">OpenStreetMap</a>'
+        }).addTo(mapPreviewLocation);
+
+        let markers = [];
+        // get each point from points
+        for (let i = 0; i < points.length; i++) {
+            let point = points[i];
+            console.log('Point: ' + point.coordinates);
+            let lat = point.coordinates[0];
+            let lon = point.coordinates[1];
+            // add a marker for each point
+            let marker = L.marker([lat, lon])
+                .bindPopup(point.title);
+            markers.push(marker);
+        }
+        const featureGroup = L.featureGroup(markers).addTo(mapPreviewLocation);
+        // zoom to extend; show all markers but zoomed in as much as possible
+        mapPreviewLocation.fitBounds(featureGroup.getBounds(), {padding: [20, 20]});
+        mapPreviewLocation.invalidateSize();
+        // since all this is part of (animated) bootstrap (PrimeFaces) stuff for the panel this is on
+        // we need to trigger a resize event to get the map to show correctly
+        // When incorrect, just a little manual browser window resizing seems to fix it....
+        // Now to fix it we need to do the invalidateSize  with a delay !    
+        setTimeout(() => {
+            mapPreviewLocation.invalidateSize();
+            mapPreviewLocation.fitBounds(featureGroup.getBounds());
+            // make the bounds a bit wider
+            mapPreviewLocation.fitBounds(featureGroup.getBounds(), {padding: [20, 20]});
+            // window.dispatchEvent(new Event('resize'));
+        }, 300); // slight delay helps with animations/layout shifts
+
+        return mapPreviewLocation;
+ 
     }
+
 };
 
 // experimenting with popovers
