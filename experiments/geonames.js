@@ -197,6 +197,11 @@ function updatePlaceInputs() {
                                     function(x) {
                                         return {
                                             text: x['name'] +
+                                                " (" + 
+                                                (x['toponymName'] !== x['name'] ? (x['toponymName'] + ', ') : '') + 
+                                                (x['adminName1'] !== x['name'] ? (x['adminName1'] + ', ') : '') + 
+                                                x['countryName'] + 
+                                                ")" +
                                                 "; " +
                                                 x['geonameId'],
                                             id: x['geonameId'],

@@ -81,7 +81,7 @@
                role="textbox"
                data-cvoc-protocol="geonames"
                data-cvoc-vocabs="{"geonames":{"uriSpace":"https://sws.geonames.org/"}}"
-               data-cvoc-allowfreetext="true"
+               data-cvoc-allowfreetext="false"
                lang=""
                data-cvoc-headers="{}"
                data-cvoc-filter=""
@@ -128,7 +128,6 @@
 // Hardcode it here for now
 // NOTE: Replace with real value!
 var geonamesUsername = "your_geonames_username"; // kind of an API key for the Geonames service
-
 
 // Note that these selectors should match the Dataverse CVOC configuration
 var placeSelector = "span[data-cvoc-protocol='geonames']";
@@ -319,6 +318,11 @@ function updatePlaceInputs() {
                                     function(x) {
                                         return {
                                             text: x['name'] +
+                                                " (" + 
+                                                (x['toponymName'] !== x['name'] ? (x['toponymName'] + ', ') : '') + 
+                                                (x['adminName1'] !== x['name'] ? (x['adminName1'] + ', ') : '') + 
+                                                x['countryName'] + 
+                                                ")" +
                                                 "; " +
                                                 x['geonameId'],
                                             id: x['geonameId'],
