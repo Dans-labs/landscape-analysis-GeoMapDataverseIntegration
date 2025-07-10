@@ -1,9 +1,7 @@
 
-// TODO
-// Some code for getting the username for the API
-// store it for easy page reload
+// Geonames integration for the Dataverse External CVOC 
 
-// Hardcode it here for now
+// Some code for getting the username for the API
 // NOTE: Replace with real value!
 var geonamesUsername = "your_geonames_username"; // kind of an API key for the Geonames service
 
@@ -11,13 +9,37 @@ var geonamesUsername = "your_geonames_username"; // kind of an API key for the G
 // Note that these selectors should match the Dataverse CVOC configuration
 var placeSelector = "span[data-cvoc-protocol='geonames']";
 var placeInputSelector = "input[data-cvoc-protocol='geonames']";
-var placePrefix = "place:"; // maybe use geonames: instead
+var placePrefix = "place:";
 
 
 $(document).ready(function() {
     expandPlaces(); // This is the display part
     updatePlaceInputs(); // This is the input part (autocomplete dropdown)
 });
+
+// This function formats the place name for display
+// It uses the place object to construct a string
+function getFormattedPlacename(place) {
+    var name = place.name;
+
+    let nameDetailsArray = [];
+
+    if (place.toponymName && place.toponymName !== place.name) {
+        nameDetailsArray.push(place.toponymName);
+    }
+    if (place.adminName1 && place.adminName1 !== place.name) {
+        nameDetailsArray.push(place.adminName1);
+    }
+    if (place.countryName) {
+        nameDetailsArray.push(place.countryName);
+    }
+
+    if (nameDetailsArray.length > 0) {
+        // If there are additional details, append them in parentheses
+        name += " (" + nameDetailsArray.join(', ') + ")";
+    }
+    return name;
+}
 
 // For displaying the places; expanding the info for the geonames IDs
 function expandPlaces() {
@@ -48,11 +70,11 @@ function expandPlaces() {
                     success: function(place, status) {
                         // If found, construct the HTML for display
                         // extract the name from the JSON response
-                        var name = place.name; //place.name['family-name'].value + ", " + place.name['given-names'].value;
+                        var name = getFormattedPlacename(place);
                         // Note there is no logo for geonames service so we just use the geonames site icon
                         var displayElement = $('<span/>').text(name).append($('<a/>').attr('href', 'https://sws.geonames.org/' + id)
                                             .attr('target', '_blank').attr('rel', 'noopener')
-                                            .html('<img alt="Geoname logo?" src="https://www.geonames.org/geonames.ico" width="16" height="16" />'));
+                                            .html('<img alt="Geoname logo?" src="https://www.geonames.org/geonames.ico" width="16" height="16" style="margin-left:4px;" />'));
                         $(placeElement).hide();
                         let sibs = $(placeElement).siblings("[data-cvoc-index='" + $(placeElement).attr('data-cvoc-index') + "']");
                         if (sibs.length == 0) {
@@ -119,13 +141,15 @@ function updatePlaceInputs() {
             $(placeInput).attr('data-place', num);
             //Todo: if not displayed, wait until it is to then create the select 2 with a non-zero width
 
+            let allowFreeText = ($(placeInput).attr('data-cvoc-allowfreetext') == 'true');
+
             //Add a select2 element to allow search and provide a list of choices
             var selectId = "placeAddSelect_" + num;
             $(placeInput).parent().parent().children('div').eq(0).append(
                 '<select id=' + selectId + ' class="form-control add-resource select2" tabindex="0">');
             $("#" + selectId).select2({
                 theme: "classic",
-                tags: $(placeInput).attr('data-cvoc-allowfreetext'),
+                tags: allowFreeText,
                 delay: 500,
                 templateResult: function(item) {
                     // No need to template the searching text
@@ -196,14 +220,7 @@ function updatePlaceInputs() {
                                 .map(
                                     function(x) {
                                         return {
-                                            text: x['name'] +
-                                                " (" + 
-                                                (x['toponymName'] !== x['name'] ? (x['toponymName'] + ', ') : '') + 
-                                                (x['adminName1'] !== x['name'] ? (x['adminName1'] + ', ') : '') + 
-                                                x['countryName'] + 
-                                                ")" +
-                                                "; " +
-                                                x['geonameId'],
+                                            text: getFormattedPlacename(x) + "; " + x['geonameId'],    
                                             id: x['geonameId'],
                                             //Since clicking in the selection re-opens the choice list, one has to use a right click/open in new tab/window to view the ORCID page
                                             //Using title to provide that hint as a popup
@@ -243,7 +260,8 @@ function updatePlaceInputs() {
                     },
                     success: function(place, status) {
                         // extract the name from the JSON response
-                        var name = place.name;
+                        var name = getFormattedPlacename(place);
+                        
                         var text = name + "; " + id;
                         var newOption = new Option(text, id, true, true);
                         newOption.title = 'Open in new tab to view geonames page';
