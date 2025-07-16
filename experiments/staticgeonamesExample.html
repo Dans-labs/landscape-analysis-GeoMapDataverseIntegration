@@ -66,13 +66,14 @@
       the display entries when new inputs are selected, feel free!)</h3>
       
       This example uses the 
-      <a href="https://geonames.org">Geonames service <img alt="GeoNames logo" src="https://www.geonames.org/geonames.ico" width="16" height="16" style="margin-left:4px;" /></a> for which you must have an account (username) and have the API usage enabled. 
+      <a href="https://geonames.org">Geonames service <img alt="GeoNames logo" src="https://www.geonames.org/geonames.ico" width="16" height="16" style="margin-left:4px;margin-right:4px;" /></a> for which you must have an account (username) and have the API usage enabled. 
       
 
       <h2>Input</h2>
       <div style="width:600px">
          <label for="d1">Place (geographic location name)</label>
          <div>
+            <!-- Note that we have data-cvoc-allowfreetext="true" for testing purposes -->
             <input
                id="d1"
                name="d1"
@@ -80,7 +81,7 @@
                value="Amsterdam or Mokum, as free text"
                role="textbox"
                data-cvoc-protocol="geonames"
-               data-cvoc-vocabs="{"geonames":{"uriSpace":"https://sws.geonames.org/"}}"
+               data-cvoc-vocabs="{&quot;geonames&quot;:{&quot;uriSpace&quot;:&quot;https://sws.geonames.org/&quot;}}"
                data-cvoc-allowfreetext="true"
                lang=""
                data-cvoc-headers="{}"
@@ -153,7 +154,7 @@ function getFormattedPlacename(place) {
     if (place.adminName1 && place.adminName1 !== place.name) {
         nameDetailsArray.push(place.adminName1);
     }
-    if (place.countryName) {
+    if (place.countryName && place.countryName !== place.name) {
         nameDetailsArray.push(place.countryName);
     }
 
@@ -198,7 +199,7 @@ function expandPlaces() {
                         // Note there is no logo for geonames service so we just use the geonames site icon
                         var displayElement = $('<span/>').text(name).append($('<a/>').attr('href', 'https://sws.geonames.org/' + id)
                                             .attr('target', '_blank').attr('rel', 'noopener')
-                                            .html('<img alt="Geoname logo?" src="https://www.geonames.org/geonames.ico" width="16" height="16" style="margin-left:4px;" />'));
+                                            .html('<img alt="Geoname logo?" src="https://www.geonames.org/geonames.ico" width="16" height="16" style="margin-left:4px;margin-right:4px;" />'));
                         $(placeElement).hide();
                         let sibs = $(placeElement).siblings("[data-cvoc-index='" + $(placeElement).attr('data-cvoc-index') + "']");
                         if (sibs.length == 0) {
@@ -206,6 +207,8 @@ function expandPlaces() {
                         } else {
                             displayElement.insertBefore(sibs.eq(0));
                         }
+                        // NOTE: Not sure why it is not just displayElement.insertBefore($(placeElement));
+
                         //Store the most recent IDs - could cache results, but currently using this just to prioritized recently used ORCIDs in search results
                         storeValue(placePrefix, id, name);
                     },

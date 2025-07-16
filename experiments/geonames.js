@@ -30,7 +30,7 @@ function getFormattedPlacename(place) {
     if (place.adminName1 && place.adminName1 !== place.name) {
         nameDetailsArray.push(place.adminName1);
     }
-    if (place.countryName) {
+    if (place.countryName && place.countryName !== place.name) {
         nameDetailsArray.push(place.countryName);
     }
 
@@ -74,7 +74,7 @@ function expandPlaces() {
                         // Note there is no logo for geonames service so we just use the geonames site icon
                         var displayElement = $('<span/>').text(name).append($('<a/>').attr('href', 'https://sws.geonames.org/' + id)
                                             .attr('target', '_blank').attr('rel', 'noopener')
-                                            .html('<img alt="Geoname logo?" src="https://www.geonames.org/geonames.ico" width="16" height="16" style="margin-left:4px;" />'));
+                                            .html('<img alt="Geoname logo?" src="https://www.geonames.org/geonames.ico" width="16" height="16" style="margin-left:4px;margin-right:4px;" />'));
                         $(placeElement).hide();
                         let sibs = $(placeElement).siblings("[data-cvoc-index='" + $(placeElement).attr('data-cvoc-index') + "']");
                         if (sibs.length == 0) {
@@ -82,6 +82,8 @@ function expandPlaces() {
                         } else {
                             displayElement.insertBefore(sibs.eq(0));
                         }
+                        // NOTE: Not sure why it is not just displayElement.insertBefore($(placeElement));
+
                         //Store the most recent IDs - could cache results, but currently using this just to prioritized recently used ORCIDs in search results
                         storeValue(placePrefix, id, name);
                     },
